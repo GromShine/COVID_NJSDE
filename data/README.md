@@ -1,2 +1,2 @@
-# for now, small data use 't1', big data use 'c1'
+# for now, small example data use 't1', big example data use 'c1'
 

@@ -23,9 +23,9 @@ parser.add_argument('--paramw', type=str, default='params.pth')
 parser.add_argument('--batch_size', type=int, default=12)
 parser.add_argument('--nsave', type=int, default=10)
 parser.add_argument('--fold', type=int, default=0)
-parser.add_argument('--dataset', type=str, default='t1')
-# for now, big data use 'c1', small data use 't1'
-
+parser.add_argument('--dataset', type=str, default='m1')
+# small example data use 'm1' : Massachusetts from 20200928 to 20201228
+# big example data use 'c1': california from 20200928 to 20201228
 
 parser.set_defaults(restart=False, evnt_align=False, seed0=False, debug=False)
 parser.add_argument('--restart', dest='restart', action='store_true')

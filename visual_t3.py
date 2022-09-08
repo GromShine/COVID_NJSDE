@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 signal.signal(signal.SIGINT, lambda sig, frame: sys.exit(0))
 
 parser = argparse.ArgumentParser('point_processes')
-parser.add_argument('--niters', type=int, default=5000)
+parser.add_argument('--niters', type=int, default=5)
 parser.add_argument('--jump_type', type=str, default='read')
 parser.add_argument('--paramr', type=str, default='params.pth')
 parser.add_argument('--paramw', type=str, default='params.pth')
@@ -182,7 +182,8 @@ if __name__ == '__main__':
                         B_matrix[Ai,Aj]=0
                     else:
                         B_matrix[Ai,Aj]=A_matrix[Ai,Aj]
-                            
+               
+            torch.save(A_matrix,"result.txt")
             if torch.norm(A_matrix.grad)<1e-4:
                 #终止条件
                 torch.save(A_matrix,"result.txt")

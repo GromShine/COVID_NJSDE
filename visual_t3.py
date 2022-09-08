@@ -205,7 +205,7 @@ if __name__ == '__main__':
             tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
                                                                        tspan, dt, batch, args.evnt_align, A_matrix, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             
-            visualize("./graph2", tsave, trace, lmbda, tsave, trace, None, None, tsne, range(len(TS)), it)
+            #visualize("./graph2", tsave, trace, lmbda, tsave, trace, None, None, tsne, range(len(TS)), it)
             
             #print(func.backtrace,"???")
             #print(reversed(func.backtrace),"???")

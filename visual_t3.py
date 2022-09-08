@@ -142,9 +142,9 @@ if __name__ == '__main__':
             print(lmbda[1])
             print(lmbda[2])
             '''
-            print(lmbda[:,0][:,0][50])
-            print(lmbda[:,0][:,0][156])
-            print(lmbda[:,0][:,0][351])
+            #print(lmbda[:,0][:,0][50])
+            #print(lmbda[:,0][:,0][156])
+            #print(lmbda[:,0][:,0][351])
             
             '''
             plt.figure(2)

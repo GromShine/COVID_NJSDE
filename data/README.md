@@ -4,7 +4,7 @@
 ## new data processes
 
 
-1. pre_process.py/pre_process_for_all.py
+pre_process.py/pre_process_for_all.py
 
 1.1 read each county longitude and latitude and unique ID(fip)
 

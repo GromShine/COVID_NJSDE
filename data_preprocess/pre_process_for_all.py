@@ -122,6 +122,7 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     dict_data = {}
     dict_e_num = 0
     
+    # 
     case_split = 50
     
     for j in range(neighbor_num+1):
@@ -178,22 +179,19 @@ for line in open('date_fips_cases.txt', encoding='gb18030', errors='ignore'):
     cases.append(int(a[2]))
     
       
-    
+# sample input of query_by_fips(query_county_fips, query_county_st,query_county_end, query_county_num)
 query_county_fips = '78020'
 query_county_st = '2021-06-28'
 query_county_end = '2021-12-28'
 query_county_num = 20
+
 sav_root = 'covid_tot'
 
 
 if not os.path.exists(sav_root):
     os.mkdir(sav_root)
 
-
-
-
-#print(len(fips))
-# 3233 counties
+# total number of counties with fip: 3233
 
 for i in tqdm(range(538*0,538*1)):
     

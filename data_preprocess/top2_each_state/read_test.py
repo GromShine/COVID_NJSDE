@@ -10,17 +10,25 @@ import os
 import pickle
 import shutil
 
-a_file = open("California_Los Angeles_06037_2021-06-28_2021-12-28_300.pkl", "rb")
-data = pickle.load(a_file)
 
-mx = 0
-mn = 1000
-print(len(data))
-for i in data:
-    print(len(data[i]))
-    if len(data[i])>mx:
-        mx = len(data[i])
-    if len(data[i])<mn:
-        mn = len(data[i])
+#path = 'ver_dis'
+path = 'ver_num'
 
-print(mx,mn)
+datanames = os.listdir(path)
+
+
+for i in range(len(datanames)):
+    a_file = open(path+'/'+datanames[i], "rb")
+    data = pickle.load(a_file)
+    
+    mx = 0
+    mn = 1000
+    print('len:',len(data))
+    for i in data:
+        print(len(data[i]))
+        if len(data[i])>mx:
+            mx = len(data[i])
+        if len(data[i])<mn:
+            mn = len(data[i])
+    
+    print('MAX:',mx,'MIN:',mn)

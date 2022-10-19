@@ -6,12 +6,13 @@ import os
 import pickle
 import shutil
 
-path = 'covid_data_ver_dis'
+path = 'covid_data_ver_num'
 datanames = os.listdir(path)
 
 # the less percentage of zero event sequence, the better data quality
 perx = [1/10,1/5,1/4,1/3,2/5,1/2,3/5,3/4,4/5,1]
-tar = 'top2_each_state'
+#tar = 'top2_each_state/ver_dis/'
+tar = 'top2_each_state/ver_num/'
 if not os.path.exists(tar):
     os.mkdir(tar)
 

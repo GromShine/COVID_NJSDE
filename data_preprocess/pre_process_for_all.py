@@ -163,7 +163,6 @@ date = []
 county_ = []
 cases = []
 
-
 # https://github.com/nytimes/covid-19-data/blob/master/us-counties.csv
 # column: data, fips, cases
 
@@ -182,35 +181,27 @@ query_county_num = 20
 
 sav_root = 'covid_tot'
 
-
 if not os.path.exists(sav_root):
     os.mkdir(sav_root)
 
 # total number of counties with fip: 3233
+# the data will be grouped into folders by state
 
-for i in tqdm(range(538*0,538*1)):
+for i in tqdm(range(len(fips))):
     
     query_county_fips = fips[i]
     
     #if(fips_state[fips[i]]=='California'):       
-    print(i)
+    
     res = query_by_fips(query_county_fips, query_county_st,query_county_end, query_county_num)
     
-    #print(len(res))
     if len(res)>2:
         if not os.path.exists(sav_root+'\\'+fips_state[query_county_fips]):
             os.mkdir(sav_root+'\\'+fips_state[query_county_fips])
         
-        #print(res)
-        #save_doc_name = fips_state[query_county_fips]+"_"+fips_county[query_county_fips]+"_"+query_county_fips+"_"+query_county_st+"_"+query_county_end+"_"+(str)(query_county_num)+".txt"
         save_doc_name = sav_root+'\\'+fips_state[query_county_fips]+'\\'+fips_state[query_county_fips]+"_"+fips_county[query_county_fips]+"_"+query_county_fips+"_"+query_county_st+"_"+query_county_end+"_"+(str)(query_county_num)
-        #print(save_doc_name)
-        #text_save(save_doc_name,res)
         save_dict(res, save_doc_name)
-        #exit
-        
-#np.savetxt(query_county_name+"_"+query_county_st+"_"+query_county_end+"_"+(str)(query_county_num)+".txt", res, delimiter=",")
-
+     
 
 
 

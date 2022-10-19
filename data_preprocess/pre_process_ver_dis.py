@@ -51,10 +51,10 @@ for line in open('county_state_fips.txt'):
     fips.append(a[2])
     county_num += 1
     
+    
 
 
 
-'''
 dis = np.eye(tot,dtype=float)
 #dis = [[0]*tot] * tot
 #print(type(dis))
@@ -70,10 +70,10 @@ for i in range(tot):
     for j in range(tot):
         dis[i,j] = cal_dis(loc_x[i], loc_x[j], loc_y[i], loc_y[j])
 
-print(dis)
+#print(dis)
 
 np.savetxt("county_dis.txt", dis, fmt="%f", delimiter=",")
-'''
+exit
 
 # call the county distance that has been stored, without second calculation
 dis2 = np.loadtxt("county_dis.txt",delimiter=",")
@@ -98,7 +98,7 @@ def save_dict(data,name):
     a_file.close()
 
 
-def query_by_fips(fips, st_date, end_date, neighbor_num):
+def query_by_fips(fips, st_date, end_date, query_dis):
     # use county id(fip) to search
     # date format '20xx-xx-xx'
     
@@ -111,11 +111,14 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     nums = [i[1] for i in sorted_dis]
     
     #print(idx[0:10])
-    #tmp = idx[0:10]
-    #for i in tmp:
-    #    print(loc_y[county_idx[county_fips[i]]],',',loc_x[county_idx[county_fips[i]]],',\'',fips_county[county_fips[i]],'\'')
-    #print(nums[0:10])
-    #exit
+    for i in range(len(nums)):
+        print(nums[i])
+        # assume longitude & latitude = 111km
+        if nums[i] * 111 >= query_dis:
+            tot_neibor = i
+            break
+    print(tot_neibor)
+    exit
     
     tot_len = len(date)
     
@@ -135,7 +138,7 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     case_split = 500
     
     # solve the nearest neighbors' data(include targe county itself)
-    for j in range(neighbor_num+1):
+    for j in range(tot_neibor+1):
         tmp_list = []
         for i in range(tot_len):
             if date[i] < end_date and date[i] >= st_date:
@@ -159,12 +162,12 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     return dict_data
 
 
-def query_by_county_state(county,state, st_date, end_date, neighbor_num):
+def query_by_county_state(county,state, st_date, end_date, query_dis):
     # use county name and state name to search
     # why state name is needed
     # because there r different counties in different states with the same name
     # county_id = fips
-    query_by_fips(county_state_fips[county+state], st_date, end_date, neighbor_num)
+    query_by_fips(county_state_fips[county+state], st_date, end_date, query_dis)
     
 date = []
 county_ = []
@@ -180,11 +183,11 @@ for line in open('date_fips_cases.txt', encoding='gb18030', errors='ignore'):
     cases.append(int(a[2]))
     
       
-# sample input of query_by_fips(query_county_fips, query_county_st,query_county_end, query_county_num)
+# sample input of query_by_fips(query_county_fips, query_county_st,query_county_end, query_county_dis)
 query_county_fips = '78020'
 query_county_st = '2021-06-28'
 query_county_end = '2021-12-28'
-query_county_num = 15
+query_county_dis = 300
 
 sav_root = 'covid_tot'
 
@@ -199,15 +202,16 @@ for i in tqdm(range(len(fips))):
     query_county_fips = fips[i]
     
     # we can extract 1 state's data to test first
-    if(fips_state[fips[i]]=='California' and fips_county[fips[i]]=='Riverside'):       
+    #if(fips_state[fips[i]]=='California' and fips_county[fips[i]]=='Riverside'):       
+    if(fips_state[fips[i]]=='California'):       
     
-        res = query_by_fips(query_county_fips, query_county_st,query_county_end, query_county_num)
+        res = query_by_fips(query_county_fips, query_county_st,query_county_end, query_county_dis)
         
         if len(res)>2:
             if not os.path.exists(sav_root+'\\'+fips_state[query_county_fips]):
                 os.mkdir(sav_root+'\\'+fips_state[query_county_fips])
             
-            save_doc_name = sav_root+'\\'+fips_state[query_county_fips]+'\\'+fips_state[query_county_fips]+"_"+fips_county[query_county_fips]+"_"+query_county_fips+"_"+query_county_st+"_"+query_county_end+"_"+(str)(query_county_num)
+            save_doc_name = sav_root+'\\'+fips_state[query_county_fips]+'\\'+fips_state[query_county_fips]+"_"+fips_county[query_county_fips]+"_"+query_county_fips+"_"+query_county_st+"_"+query_county_end+"_"+(str)(query_county_dis)
             save_dict(res, save_doc_name)
      
 

@@ -104,10 +104,11 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     
     # get the distance between the target county and all other counties
     dis_list = dis2[county_idx[fips]]
+    
+    # sort the distance
     sorted_dis = sorted(enumerate(dis_list), key=lambda x: x[1])
     idx = [i[0] for i in sorted_dis]
     nums = [i[1] for i in sorted_dis]
-    #print(county[idx])
     
     tot_len = len(date)
     
@@ -117,15 +118,16 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     
     ans2 = []
     
-    # 
+    # output data dictionary
     dict_data = {}
-    # 
+    # number of counties that at least 1 event happened
     dict_e_num = 0
     
     # teate every N new covid cases as 1 event
     # modify N to control the event sequence length
     case_split = 100
     
+    # solve the nearest neighbors' data
     for j in range(neighbor_num+1):
         tmp_list = []
         for i in range(tot_len):

@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 # Given the number of a county, start time, end time, and the number of nearby counties
 # ouput an covid cases dataset centered on that county
-
+import datetime
+import pickle
+import numpy as np
+import os
+from tqdm import tqdm
 
 dic = {}
 county_idx = {}
@@ -9,10 +13,11 @@ county_fips = []
 loc_x = []
 loc_y = []
 
+# tot: county num
 tot = 0
 
 # https://public.opendatasoft.com/explore/dataset/us-county-boundaries/
-# Geo Point, GeoID
+# column: Geo Point, GeoID
 for line in open('county_fips_geo.txt', encoding='gb18030', errors='ignore'):
     # read each county longitude and latitude and unique ID(fip)    
     a = line.split()
@@ -47,7 +52,7 @@ for line in open('county_state_fips.txt'):
     county_num += 1
     
 
-import numpy as np
+
 
 '''
 dis = np.eye(tot,dtype=float)
@@ -56,7 +61,7 @@ dis = np.eye(tot,dtype=float)
 
 import math
 
-#计算任意两个county之间的距离并存储
+# calculate each county pair distance
 def cal_dis(x1,x2,y1,y2):
     return math.sqrt((x1-x2)**2+(y1-y2)**2)
 
@@ -70,15 +75,9 @@ print(dis)
 np.savetxt("county_dis.txt", dis, fmt="%f", delimiter=",")
 '''
 
-#直接调用已经存储好的county距离,无需二次计算
+# call the county distance that has been stored, without second calculation
 dis2 = np.loadtxt("county_dis.txt",delimiter=",")
 
-'''
-print(dis2)
-
-if dis.all() == dis2.all():
-    print('ok')
-'''
 
 def text_save(filename, data):
     file = open(filename,'w')
@@ -87,12 +86,11 @@ def text_save(filename, data):
         file.write(s)
     file.close()
     
-import datetime
+
     
 def str_to_dt(s):
     return datetime.datetime.strptime(s,'%Y-%m-%d')
 
-import pickle
 
 def save_dict(data,name):
     a_file = open(name+".pkl", "wb")
@@ -101,6 +99,7 @@ def save_dict(data,name):
 
 
 def query_by_fips(fips, st_date, end_date, neighbor_num):
+    # use county id(fip) to search
     # date format '20xx-xx-xx'
     
     #print(fips)
@@ -158,6 +157,9 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
 
 
 def query_by_county_state(county,state, st_date, end_date, neighbor_num):
+    # use county name and state name to search
+    # why state name is needed
+    # because there r different counties in different states with the same name
     # county_id = fips
     query_by_fips(county_state_fips[county+state], st_date, end_date, neighbor_num)
     
@@ -165,6 +167,9 @@ date = []
 county_ = []
 cases = []
 
+
+# https://github.com/nytimes/covid-19-data/blob/master/us-counties.csv
+# column: data, fips, cases
 
 for line in open('date_fips_cases.txt', encoding='gb18030', errors='ignore'):   
     a = line.split('\n')[0].split(',')
@@ -180,12 +185,12 @@ query_county_end = '2021-12-28'
 query_county_num = 20
 sav_root = 'covid_tot'
 
-import os
+
 if not os.path.exists(sav_root):
     os.mkdir(sav_root)
 
 
-from tqdm import tqdm
+
 
 #print(len(fips))
 # 3233 counties

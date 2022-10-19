@@ -214,7 +214,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     #    log_likelihood -= compute_integration(A_matrix,dim_idx)
     
     
-    '''
+    
     #通过学到的lambda函数积分求出loglikehood后半部分
     def integrate(tt, ll):
         lm = (ll[:-1, ...] + ll[1:, ...]) / 2.0
@@ -222,7 +222,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
         return (lm * dts).sum()
     
         log_likelihood = -integrate(tsave, lmbda)
-        '''
+        
         
     def intensity(A_matrix,cur_time, dim_idx):
         relu = nn.ReLU()

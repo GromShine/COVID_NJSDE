@@ -191,6 +191,7 @@ for i in tqdm(range(len(fips))):
     
     query_county_fips = fips[i]
     
+    # we can extract 1 state's data to test first
     #if(fips_state[fips[i]]=='California'):       
     
     res = query_by_fips(query_county_fips, query_county_st,query_county_end, query_county_num)

@@ -38,10 +38,12 @@ county_state_fips = {}
 county_num=0
 fips = []
 
+
 for line in open('county_state_fips.txt'):
-    #读取county, 所在state, fip
-    #if a[2]=='':
-    #    print(a)
+    # read county's state & fip
+    # unknown county does not have fip
+    # Kansas City,Joplin, New York City do not have fips
+    
     a = line.split('\n')[0].split(',')
     fips_state[a[2]] = a[1]
     fips_county[a[2]] = a[0]

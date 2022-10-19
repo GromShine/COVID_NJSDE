@@ -10,13 +10,14 @@ import os
 import pickle
 import shutil
 
-a_file = open("California_San Diego_06073_2021-06-28_2021-12-28_15.pkl", "rb")
+a_file = open("California_Los Angeles_06037_2021-06-28_2021-12-28_300.pkl", "rb")
 data = pickle.load(a_file)
 
 mx = 0
 mn = 1000
 print(len(data))
 for i in data:
+    print(len(data[i]))
     if len(data[i])>mx:
         mx = len(data[i])
     if len(data[i])<mn:

@@ -6,7 +6,7 @@ import os
 import pickle
 import shutil
 
-path = 'covid_data_ver_num'
+path = 'covid_data_ver_dis'
 datanames = os.listdir(path)
 
 # the less percentage of zero event sequence, the better data quality

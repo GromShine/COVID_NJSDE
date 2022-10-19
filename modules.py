@@ -172,7 +172,7 @@ class ODEJumpFunc(nn.Module):
             self.F = GCU(dim_c, dim_h, dim_hidden, num_hidden, activation, aggregation, graph)
         else:
             self.F = MLP(dim_c+dim_h, dim_c, dim_hidden, num_hidden, activation)
-        #F是动态方程
+        #F is dynamics
 
         self.G = nn.Sequential(MLP(dim_c, dim_h, dim_hidden, num_hidden, activation), nn.Softplus())
         #G表示event memory h(t)的衰减

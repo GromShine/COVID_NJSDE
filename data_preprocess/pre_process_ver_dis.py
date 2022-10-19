@@ -5,6 +5,8 @@ import datetime
 import pickle
 import numpy as np
 import os
+import math
+
 from tqdm import tqdm
 
 dic = {}
@@ -54,12 +56,10 @@ for line in open('county_state_fips.txt'):
     
 
 
-
+'''
 dis = np.eye(tot,dtype=float)
 #dis = [[0]*tot] * tot
 #print(type(dis))
-
-import math
 
 # calculate each county pair distance
 def cal_dis(x1,x2,y1,y2):
@@ -73,7 +73,7 @@ for i in range(tot):
 #print(dis)
 
 np.savetxt("county_dis.txt", dis, fmt="%f", delimiter=",")
-exit
+'''
 
 # call the county distance that has been stored, without second calculation
 dis2 = np.loadtxt("county_dis.txt",delimiter=",")

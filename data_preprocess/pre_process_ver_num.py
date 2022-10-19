@@ -186,7 +186,7 @@ query_county_st = '2021-06-28'
 query_county_end = '2021-12-28'
 query_county_num = 15
 
-sav_root = 'covid_tot'
+sav_root = 'covid_data_ver_num'
 
 if not os.path.exists(sav_root):
     os.mkdir(sav_root)
@@ -199,7 +199,8 @@ for i in tqdm(range(len(fips))):
     query_county_fips = fips[i]
     
     # we can extract 1 state's data to test first
-    if(fips_state[fips[i]]=='California' and fips_county[fips[i]]=='Riverside'):       
+    #if(fips_state[fips[i]]=='California' and fips_county[fips[i]]=='Riverside'):       
+    if(fips_state[fips[i]]=='California'):       
     
         res = query_by_fips(query_county_fips, query_county_st,query_county_end, query_county_num)
         

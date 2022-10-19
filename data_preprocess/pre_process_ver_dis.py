@@ -54,8 +54,6 @@ for line in open('county_state_fips.txt'):
     county_num += 1
     
     
-
-
 '''
 dis = np.eye(tot,dtype=float)
 #dis = [[0]*tot] * tot
@@ -112,13 +110,12 @@ def query_by_fips(fips, st_date, end_date, query_dis):
     
     #print(idx[0:10])
     for i in range(len(nums)):
-        print(nums[i])
+        #print(nums[i]* 111)
         # assume longitude & latitude = 111km
         if nums[i] * 111 >= query_dis:
             tot_neibor = i
             break
-    print(tot_neibor)
-    exit
+    #print(tot_neibor)
     
     tot_len = len(date)
     
@@ -189,7 +186,7 @@ query_county_st = '2021-06-28'
 query_county_end = '2021-12-28'
 query_county_dis = 300
 
-sav_root = 'covid_tot'
+sav_root = 'covid_data_ver_dis'
 
 if not os.path.exists(sav_root):
     os.mkdir(sav_root)

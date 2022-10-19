@@ -127,7 +127,7 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     # modify N to control the event sequence length
     case_split = 100
     
-    # solve the nearest neighbors' data
+    # solve the nearest neighbors' data(include targe county itself)
     for j in range(neighbor_num+1):
         tmp_list = []
         for i in range(tot_len):
@@ -148,11 +148,7 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
         if tmp_list!=[]:
             dict_data[dict_e_num] = tmp_list
             dict_e_num += 1            
-    #print(idx[0:neighbor_num])
-    # should include itself!
-    #print(nums[1:neighbor_num])
-    #ans.sort()
-    
+
     return dict_data
 
 

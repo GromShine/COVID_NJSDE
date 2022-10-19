@@ -12,11 +12,12 @@ datanames = os.listdir(path)
 perx = [1/4,1/3,2/5,1/2,3/5,3/4,4/5,1]
 tar = 'top2_each_state'
 
-for k in range(len(datanames)-1):
+for k in range(len(datanames)):
     lst = []
     lst_len = []
-    datanames2 = os.listdir(path+datanames[k])
-    #print(datanames2)
+    datanames2 = os.listdir(path+'/'+datanames[k])
+    print(datanames2)
+    exit
     
     if len(datanames2)==1:
         lst.append(datanames2[0])

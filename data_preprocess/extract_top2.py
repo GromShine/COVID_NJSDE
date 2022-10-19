@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# extract Identify the two counties in each state's neighborhood with the least empty data and the most abundant data
+# extract 2 counties in each state's neighborhood with the least empty data and the most abundant data
 
 import os
 import pickle
 import shutil
 
-path = "./"
+path = 'covid_tot'
 datanames = os.listdir(path)
 
-
 perx = [1/4,1/3,2/5,1/2,3/5,3/4,4/5,1]
-tar = '..\\total'
+tar = 'top2_each_state'
 
 for k in range(len(datanames)-1):
     lst = []

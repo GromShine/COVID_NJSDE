@@ -122,8 +122,9 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     dict_data = {}
     dict_e_num = 0
     
-    # 
-    case_split = 50
+    # teate every N new covid cases as 1 event
+    # modify N to control the event sequence length
+    case_split = 100
     
     for j in range(neighbor_num+1):
         tmp_list = []

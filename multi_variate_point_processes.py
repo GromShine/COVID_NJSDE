@@ -5,6 +5,7 @@ import argparse
 import random
 import numpy as np
 import matplotlib
+import copy
 import torch
 import torch.nn as nn
 import torch.optim as optim

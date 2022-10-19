@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Aug 27 09:04:26 2022
-
-@author: Qixiang Wang_UTD
-"""
 # Given the number of a county, start time, end time, and the number of nearby counties
 # ouput an covid cases dataset centered on that county
 

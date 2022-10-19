@@ -102,9 +102,7 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     # use county id(fip) to search
     # date format '20xx-xx-xx'
     
-    #print(fips)
-    #print(county_idx[fips])
-    
+    # get the distance between the target county and all other counties
     dis_list = dis2[county_idx[fips]]
     sorted_dis = sorted(enumerate(dis_list), key=lambda x: x[1])
     idx = [i[0] for i in sorted_dis]
@@ -119,7 +117,9 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
     
     ans2 = []
     
+    # 
     dict_data = {}
+    # 
     dict_e_num = 0
     
     # teate every N new covid cases as 1 event
@@ -131,22 +131,18 @@ def query_by_fips(fips, st_date, end_date, neighbor_num):
         for i in range(tot_len):
             if date[i] < end_date and date[i] >= st_date:
                 if county_[i]==county_fips[idx[j]]:
+                    #days passed by the last split
                     days = (str_to_dt(date[i])-str_to_dt(st_date)).days
-                    #ans.append(str(days)+','+county_[i]+','+str(cases[i]))
-    
+                    
                     if days == 0:
                         old_cases = cases[i]
                     else:
                         if cases[i] - old_cases >= case_split:
                             tmp_cnt = int ((cases[i] - old_cases)/case_split)
                             for k in range(tmp_cnt):
-                                #ans2.append(str(j)+"\t"+str(round(days+k*(1.0/tmp_cnt),2)))
                                 tmp_list.append(round(days+k*(1.0/tmp_cnt),2))
-                                #print(ans2)
                             old_cases += tmp_cnt * case_split
-        #if tmp_list==[]:
-        #    print('yes')
-        #    exit
+        
         if tmp_list!=[]:
             dict_data[dict_e_num] = tmp_list
             dict_e_num += 1            

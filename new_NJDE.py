@@ -91,7 +91,8 @@ if __name__ == '__main__':
     #初始化A-matrix
     
     # initialize / load model
-    func = ODEJumpFunc(dim_c, dim_h, dim_N, dim_N, dim_hidden=32, num_hidden=2, ortho=True, jump_type=args.jump_type, evnt_align=args.evnt_align, activation=nn.CELU())
+    func = ODEJumpFunc(dim_c, dim_h, dim_N, dim_N, dim_hidden=32, num_hidden=2, ortho=True, 
+                       jump_type=args.jump_type, evnt_align=args.evnt_align, activation=nn.CELU())
     c0 = torch.randn(dim_c, requires_grad=True)
     h0 = torch.zeros(dim_h)
     it0 = 0
@@ -124,7 +125,8 @@ if __name__ == '__main__':
             batch = [TS[seqid] for seqid in batch_id]
 
             # forward pass
-            tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, batch, args.evnt_align, A_matrix,predict_first=False, rtol=1.0e-7, atol=1.0e-9)
+            tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
+                        tspan, dt, batch, args.evnt_align, A_matrix,predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             
             loss_meter.update(loss.item() / len(batch))
 
@@ -132,6 +134,7 @@ if __name__ == '__main__':
             func.backtrace.clear()
             loss.backward()
             
+            '''
             if torch.norm(A_matrix.grad)<1e-4:
                 #终止条件
                 for Ai in range(county_num):
@@ -142,7 +145,8 @@ if __name__ == '__main__':
                 # 可以只在最后一步做此输出
                 torch.save(A_matrix,"result.txt")
                 break
-            print(A_matrix)
+            '''
+            #print(A_matrix)
             #np.savetxt(r'result.txt',A_matrix.detach().numpy(), fmt='%f', delimiter=',')
             
             print("iter: {}, current loss: {:10.4f}, running ave loss: {:10.4f}, type error: {}".format(it, loss.item()/len(batch), loss_meter.avg, mete), flush=True)

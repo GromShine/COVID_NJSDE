@@ -8,23 +8,6 @@ from torchdiffeq import odeint_adjoint
 from numbers import Number
 import torch.nn as nn
 
-def logsumexp(value, dim=None, keepdim=False):
-    """Numerically stable implementation of the operation
-    value.exp().sum(dim, keepdim).log()
-    """
-    if dim is not None:
-        m, _ = torch.max(value, dim=dim, keepdim=True)
-        value0 = value - m
-        if keepdim is False:
-            m = m.squeeze(dim)
-        return m + torch.log(torch.sum(torch.exp(value0), dim=dim, keepdim=keepdim))
-    else:
-        m = torch.max(value)
-        sum_exp = torch.sum(torch.exp(value - m))
-        if isinstance(sum_exp, Number):
-            return m + math.log(sum_exp)
-        else:
-            return m + torch.log(sum_exp)
 
 def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, batch_id, itr, gsmean=None, gsvar=None, scale=1.0, appendix=""):
     for sid in range(lmbda.shape[1]):
@@ -172,124 +155,40 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
         lmbda[:, :, :] = torch.tensor(gs_info[0])
 
     
-
-    
-    def compute_integration(A_matrix, dim_idx):
-        relu = nn.ReLU()
-        base=0.1
-        beta=2.5
-        time_horizon=tspan[1]-tspan[0]
-        #print(time_horizon,"123")
-        neighbor_idx_list = torch.nonzero(A_matrix[dim_idx, :]).squeeze().tolist()
-        #找出a-matrix里dim_idx城市的邻居里不为0的
-        intensity_int = base * time_horizon
-        
-        #初始化intensity为base*总时间
-        for neighbor_idx in neighbor_idx_list:
-            #对每个邻居
-            #初始intensity加上A[i,j]*(1-g(t))
-            #每个邻居的每个事件都计算1-g(t)
-            #intensity_int += relu(A_matrix[dim_idx, neighbor_idx]) * torch.sum(torch.Tensor([1]) - torch.exp(-beta*(time_horizon-
-            #                                                                                    torch.Tensor(batch[neighbor_idx]))))
-            data_neighbor = []
-            for t in batch[neighbor_idx]:
-                data_neighbor.append(t[0])
-            
-            #print("here",A_matrix[dim_idx, neighbor_idx])
-            #print("here",(-beta*(time_horizon-torch.Tensor(data_neighbor))))
-            
-            intensity_int += relu(A_matrix[dim_idx, neighbor_idx]) * torch.sum(torch.Tensor([1]) - torch.exp(-beta*(time_horizon-
-                                                                                                torch.Tensor(data_neighbor))))
-            
-            #exit
-        #print(intensity_int)
-        #exit
-        return intensity_int
-    
-    log_likelihood = 0
-    #for dim_idx in range(len(batch)):
-    #    log_likelihood -= compute_integration(A_matrix,dim_idx)
-    
-    
-    
     #通过学到的lambda函数积分求出loglikehood后半部分
     def integrate(tt, ll):
         lm = (ll[:-1, ...] + ll[1:, ...]) / 2.0
         dts = (tt[1:] - tt[:-1]).reshape((-1,)+(1,)*(len(lm.shape)-1)).float()
         return (lm * dts).sum()
     
-        log_likelihood = -integrate(tsave, lmbda)
+    log_likelihood = -integrate(tsave, lmbda)
         
-        
-    def intensity(A_matrix,cur_time, dim_idx):
-        relu = nn.ReLU()
-        neighbor_idx_list = torch.nonzero(A_matrix[dim_idx, :]).squeeze().tolist()
-        
-        #找出a-matrix里dim_idx城市的邻居里不为0的
-        base=0.1
-        beta=2.5
-        intensity = torch.Tensor([base])
-        #初始intensity为base
-        for neighbor_idx in neighbor_idx_list:
-            new_data_array=torch.Tensor([])
-            data_array = torch.Tensor(batch[neighbor_idx])[:,0]
-            
-            # 对每一个邻居找出batch data里这些邻居的数据
-            history_ = data_array[data_array < cur_time]
-            #print(history_)
-            # 将小于当前时间t的历史数据都拿出来
-            #print(A_matrix[dim_idx, neighbor_idx])
-            #print(cur_time - history_)
-            '''
-            if dim_idx==2:
-                print(neighbor_idx,A_matrix[dim_idx, neighbor_idx])
-                print(neighbor_idx,torch.sum(torch.exp(-beta * (cur_time - history_))))  
-                print(neighbor_idx,(A_matrix[dim_idx, neighbor_idx]) * torch.sum(torch.exp(-beta * (cur_time - history_))))
-                exit
-            '''
-            intensity += relu(A_matrix[dim_idx, neighbor_idx]) * torch.sum(torch.exp(-beta * (cur_time - history_)))
-            # A[i,j]*sum(g(δt)), g(t)=exp(-beta*t)
-            # print(intensity)
-        return intensity
     
     # set of sequences where at least one event has happened，一个batch大小的set
     seqs_happened = set(sid for sid in range(len(batch))) if predict_first else set()
     
-    
     if func.evnt_embedding == "discrete":
         et_error = []
-        for dim_idx in range(10):
-            for no2 in range(len(tse)):
-                if tse[no2][1]==dim_idx:
-                    #print(evnts[no2][0])
-                    #log的前半部分，log lambda
-                    intensity_ = intensity(A_matrix,evnts[no2][0], evnts[no2][1])
-                    #用每个事件的时间点和城市下标建模intensity
-                    log_likelihood += torch.log(intensity_[0])
-                    #log_likelihood += torch.log(lmbda[evnt])
-                    
-                    if tse[no2][1] in seqs_happened:
-                        #如果当前取出来的事件在我们batch的维度里
-                        type_preds = torch.zeros(len(type_forecast))
-                        #置0
-                        for tid, t in enumerate(type_forecast):
-                            #默认的tid和t全是0
-                            loc = (np.searchsorted(tsavenp, tsave[tse[no2][0]].item()-t),) + tse[no2][1:-1]
-                            #在所有的事件时间和整点时间里，找出evnt[0]的时间-t放在哪里可以保持原序列不变
-                            type_preds[tid] = lmbda[loc].argmax().item()
-                            #找出lambda强度最大的一项作为预测事件种类
-                        et_error.append((type_preds != tse[no2][-1]).float())
-                        #预测错了就加1
-                    seqs_happened.add(tse[no2][1])
-                    #将当前事件加入到batch维度的set中
-            #print(log_likelihood,">>>")
-            #exit
-            log_likelihood -= compute_integration(A_matrix,dim_idx)    
-            #print(log_likelihood,"<<<")
+        for evnt in tse:
+            log_likelihood += torch.log(lmbda[evnt])
+            if evnt[1] in seqs_happened:
+                #如果当前取出来的事件在我们batch的维度里
+                type_preds = torch.zeros(len(type_forecast))
+                #置0
+                for tid, t in enumerate(type_forecast):
+                    #默认的tid和t全是0
+                    loc = (np.searchsorted(tsavenp, tsave[evnt[0]].item()-t),) + evnt[1:-1]
+                    #在所有的事件时间和整点时间里，找出evnt[0]的时间-t放在哪里可以保持原序列不变
+                    type_preds[tid] = lmbda[loc].argmax().item()
+                    #找出lambda强度最大的一项作为预测事件种类
+                et_error.append((type_preds != evnt[-1]).float())
+                #预测错了就加1
+            seqs_happened.add(evnt[1])
+            #将当前事件加入到batch维度的set中
 
         METE = sum(et_error)/len(et_error) if len(et_error) > 0 else -torch.ones(len(type_forecast))
         #平均每步预测错多少事件类型
-    
+
     #print(log_likelihood,"like")
     #exit
     if func.evnt_embedding == "discrete":

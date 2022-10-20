@@ -45,6 +45,7 @@ class ODEF(nn.Module):
 
         a = grad_outputs
         # 求out对于z,t,θ的gradient
+        # 对应f(z(t),t,θ),dfdz,dfdt,dfdθ
         adfdz, adfdt, *adfdp = torch.autograd.grad(
             (out,), (z, t) + tuple(self.parameters()), grad_outputs=(a),
             allow_unused=True, retain_graph=True

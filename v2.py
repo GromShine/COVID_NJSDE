@@ -129,12 +129,13 @@ class ODEAdjoint(torch.autograd.Function):
                 adfdp = adfdp.to(z_i) if adfdp is not None else torch.zeros(bs, n_params).to(z_i)
                 adfdt = adfdt.to(z_i) if adfdt is not None else torch.zeros(bs, 1).to(z_i)
 
-            # Flatten f and adfdz
+            # UnFlatten f and adfdz
             func_eval = func_eval.view(bs, n_dim)
             adfdz = adfdz.view(bs, n_dim) 
             return torch.cat((func_eval, -adfdz, -adfdp, -adfdt), dim=1)
 
-        dLdz = dLdz.view(time_len, bs, n_dim)  # flatten dLdz for convenience
+        dLdz = dLdz.view(time_len, bs, n_dim)  # Unflatten dLdz for convenience. check change or not
+        
         with torch.no_grad():
             ## Create placeholders for output gradients
             # Prev computed backwards adjoints to be adjusted by direct gradients
@@ -150,6 +151,12 @@ class ODEAdjoint(torch.autograd.Function):
 
                 # Compute direct gradients
                 dLdz_i = dLdz[i_t]
+                
+                # bmm: (b,h,w) * (b,w,m) ->(b,h,m)
+                # (bs, n_dim) -> (bs, n_dim, 1) ->  (bs, 1, n_dim)
+                # (bs, n_dim, 1)
+                # dldt_i: (bs,1,1)
+                # dldt = a * f = dldz * f
                 dLdt_i = torch.bmm(torch.transpose(dLdz_i.unsqueeze(-1), 1, 2), f_i.unsqueeze(-1))[:, 0]
 
                 # Adjusting adjoints with direct gradients

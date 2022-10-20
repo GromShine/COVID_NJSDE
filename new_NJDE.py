@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from modules import RunningAverageMeter, ODEJumpFunc
-from utils import forward_pass, visualize, create_outpath, read_timeseries
+from utils import forward_pass, visualize, read_timeseries
 import matplotlib.pyplot as plt
 
 signal.signal(signal.SIGINT, lambda sig, frame: sys.exit(0))
@@ -85,8 +85,6 @@ if __name__ == '__main__':
     # dt, forward时间间隔
     nseqs = len(TS)
 
-    TSTR = TS
-    TSVA = TS
     TSTE = TS
 
     A_matrix = Variable(0.01*torch.ones((county_num, county_num)), requires_grad= True)
@@ -126,7 +124,8 @@ if __name__ == '__main__':
             batch = [TS[seqid] for seqid in batch_id]
 
             # forward pass
-            tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, batch, args.evnt_align)
+            tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, batch, args.evnt_align, A_matrix,predict_first=False, rtol=1.0e-7, atol=1.0e-9)
+            
             loss_meter.update(loss.item() / len(batch))
 
             # backward prop
@@ -155,6 +154,6 @@ if __name__ == '__main__':
 
 
     # computing testing error
-    tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, TSTE, args.evnt_align, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
-    visualize('graph_result', tsave, trace, lmbda, None, None, None, None, tsne, range(len(TSTE)), it, appendix="testing")
-    print("iter: {:5d}, testing loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, loss.item()/len(TSTE), len(tsne)-len(TSTE), mete), flush=True)
+    tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, TS, args.evnt_align, predict_first = False, rtol=1.0e-7, atol=1.0e-9)
+    visualize('graph_result', tsave, trace, lmbda, None, None, None, None, tsne, range(len(TS)), it, appendix="testing")
+    print("iter: {:5d}, testing loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, loss.item()/len(TS), len(tsne)-len(TS), mete), flush=True)

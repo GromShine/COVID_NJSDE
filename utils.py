@@ -8,26 +8,23 @@ from torchdiffeq import odeint_adjoint
 from numbers import Number
 import torch.nn as nn
 
-#from ricky chen
-# create the outdir
-def create_outpath(dataset):
-    path = os.getcwd()
-    pid = os.getpid()
-
-    wsppath = os.path.join(path, 'workspace')
-    if not os.path.isdir(wsppath):
-        os.mkdir(wsppath)
-
-    outpath = os.path.join(wsppath, 'dataset-'+dataset + '-' + 'pid-'+str(pid))
-    #assert not os.path.isdir(outpath), 'output directory already exist (process id coincidentally the same), please retry'
-
-    while(os.path.isdir(outpath)):
-        pid+=1
-        outpath = os.path.join(wsppath, 'dataset-'+dataset + '-' + 'pid-'+str(pid))
-    
-    os.mkdir(outpath)
-    return outpath
-
+def logsumexp(value, dim=None, keepdim=False):
+    """Numerically stable implementation of the operation
+    value.exp().sum(dim, keepdim).log()
+    """
+    if dim is not None:
+        m, _ = torch.max(value, dim=dim, keepdim=True)
+        value0 = value - m
+        if keepdim is False:
+            m = m.squeeze(dim)
+        return m + torch.log(torch.sum(torch.exp(value0), dim=dim, keepdim=keepdim))
+    else:
+        m = torch.max(value)
+        sum_exp = torch.sum(torch.exp(value - m))
+        if isinstance(sum_exp, Number):
+            return m + math.log(sum_exp)
+        else:
+            return m + torch.log(sum_exp)
 
 def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, batch_id, itr, gsmean=None, gsvar=None, scale=1.0, appendix=""):
     for sid in range(lmbda.shape[1]):
@@ -37,11 +34,11 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
         axe.set_xlabel('time')
         axe.set_ylabel('intensity')
         axe.set_ylim(-3.5, 3.5)
-        axe2=axe.twinx()
+        axe2 = axe.twinx()
         axe2.set_ylabel('intensity2')
         axe2.set_ylim(-1.5, 1.5)
         # plot the state function
-        '''
+        
         if (tsave is not None) and (trace is not None):
             for dat in list(trace[:, sid, :].detach().numpy().T):
                 plt.plot(tsave.numpy(), dat, linewidth=0.3)
@@ -51,7 +48,7 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
         if (tsave_ is not None) and (trace_ is not None):
             for dat in list(trace_[:, sid, :].detach().numpy().T):
                 plt.plot(tsave_.numpy(), dat, linewidth=0.2, linestyle="dotted", color="black")
-        '''
+        
         
         '''
         # plot the intensity function
@@ -89,7 +86,7 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
         
         '''
         
-        plt.savefig(outpath + '/{:04d}_{:03d}_{}.svg'.format(itr,batch_id[sid],appendix), dpi=250)
+        plt.savefig(outpath + '/{:04d}_{:03d}_{}.png'.format(itr,batch_id[sid],appendix), dpi=250)
         fig.clf()
         plt.close(fig)
 

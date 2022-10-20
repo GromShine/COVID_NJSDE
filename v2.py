@@ -164,9 +164,12 @@ class ODEAdjoint(torch.autograd.Function):
                 adj_t[i_t] = adj_t[i_t] - dLdt_i
 
                 # Pack augmented variable
+                
+                # aug_z: z(t),a(t),θ,t
                 aug_z = torch.cat((z_i.view(bs, n_dim), adj_z, torch.zeros(bs, n_params).to(z), adj_t[i_t]), dim=-1)
 
                 # Solve augmented system backwards
+                # aug_ans: z(t+1),-dldz,-dldθ,-dldt
                 aug_ans = ode_solve(aug_z, t_i, t[i_t-1], augmented_dynamics)
 
                 # Unpack solved backwards augmented system

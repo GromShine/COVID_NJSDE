@@ -9,7 +9,8 @@ from numbers import Number
 import torch.nn as nn
 
 
-def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, batch_id, itr, gsmean=None, gsvar=None, scale=1.0, appendix=""):
+def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, 
+              batch_id, itr, gsmean=None, gsvar=None, scale=1.0, appendix=""):
     for sid in range(lmbda.shape[1]):
         fig = plt.figure(figsize=(20, 20), facecolor='white')
         axe = plt.gca()
@@ -69,7 +70,7 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
         
         '''
         
-        plt.savefig(outpath + '/{:04d}_{:03d}_{}.png'.format(itr,batch_id[sid],appendix), dpi=250)
+        plt.savefig(outpath + '/{:04d}_{:03d}_{}.png'.format(itr,batch_id[sid],appendix), dpi=320)
         fig.clf()
         plt.close(fig)
 

@@ -22,7 +22,7 @@ parser.add_argument('--jump_type', type=str, default='read')
 parser.add_argument('--paramr', type=str, default='params.pth')
 parser.add_argument('--paramw', type=str, default='params.pth')
 parser.add_argument('--batch_size', type=int, default=12)
-parser.add_argument('--nsave', type=int, default=10)
+parser.add_argument('--nsave', type=int, default=1)
 parser.add_argument('--fold', type=int, default=0)
 parser.add_argument('--dataset', type=str, default='m1')
 # small example data use 'm1' : Massachusetts from 20200928 to 20201228
@@ -155,9 +155,18 @@ if __name__ == '__main__':
             optimizer.step()
 
             it = it+1
-
-
-    # computing testing error
-    tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, TS, args.evnt_align, predict_first = False, rtol=1.0e-7, atol=1.0e-9)
-    visualize('graph_result', tsave, trace, lmbda, None, None, None, None, tsne, range(len(TS)), it, appendix="testing")
-    print("iter: {:5d}, testing loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, loss.item()/len(TS), len(tsne)-len(TS), mete), flush=True)
+            
+            if it % args.nsave == 0:
+                # save
+                torch.save({'func_state_dict': func.state_dict(), 'c0': c0, 'h0': h0, 'it0': it, 
+                    'optimizer_state_dict': optimizer.state_dict()}, 'graph_result' + '/' + '{:05d}'.format(it) + args.paramw)
+                tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
+                            tspan, dt, batch, args.evnt_align, A_matrix,predict_first=False, rtol=1.0e-7, atol=1.0e-9)
+                func.backtrace.clear()
+                loss.backward()
+                tsave_ = torch.tensor([record[0] for record in reversed(func.backtrace)])
+                trace_ = torch.stack(tuple(record[1] for record in reversed(func.backtrace)))
+                visualize('graph_result', tsave, trace, lmbda, tsave_, trace_, None, None, tsne, range(len(TS)), it)
+                #visualize('graph_result', tsave, trace, lmbda, None, None, None, None, tsne, range(len(TS)), it, appendix="testing")
+                print("iter: {:5d}, testing loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, 
+                                     loss.item()/len(TS), len(tsne)-len(TS), mete), flush=True)

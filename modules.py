@@ -197,8 +197,9 @@ class ODEJumpFunc(nn.Module):
         self.backtrace = []
 
     def forward(self, t, z):
-        c = z[..., :self.dim_c]
-        h = z[..., self.dim_c:]
+        c = z[..., :self.dim_c] #将c和h重新分开，c是前半部分
+        h = z[..., self.dim_c:] #h是后半部分
+        
         dcdt = self.F(z)
         # orthogonalize dc w.r.t. to c
         if self.ortho:

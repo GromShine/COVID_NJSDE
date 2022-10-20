@@ -70,13 +70,21 @@ class ODEAdjoint(torch.autograd.Function):
     @staticmethod
     def forward(ctx, z0, t, flat_parameters, func):
         assert isinstance(func, ODEF)
+        
+        # batch size, z_shape
         bs, *z_shape = z0.size()
+        
+        # total time
         time_len = t.size(0)
 
         with torch.no_grad():
+            
+            # initial z
             z = torch.zeros(time_len, bs, *z_shape).to(z0)
+            
             z[0] = z0
             for i_t in range(time_len - 1):
+                
                 z0 = ode_solve(z0, t[i_t], t[i_t+1], func)
                 z[i_t+1] = z0
 
@@ -92,6 +100,8 @@ class ODEAdjoint(torch.autograd.Function):
         func = ctx.func
         t, z, flat_parameters = ctx.saved_tensors
         time_len, bs, *z_shape = z.size()
+        
+        # n_dim = z_zhape?
         n_dim = np.prod(z_shape)
         n_params = flat_parameters.size(0)
 
@@ -102,6 +112,9 @@ class ODEAdjoint(torch.autograd.Function):
             t_i - is tensor with size: bs, 1
             aug_z_i - is tensor with size: bs, n_dim*2 + n_params + 1
             """
+            
+            # aug_z_i 是algorithm里def aug_dynamics([z(t),a(t)],θ,t)的对应
+            
             z_i, a = aug_z_i[:, :n_dim], aug_z_i[:, n_dim:2*n_dim]  # ignore parameters and time
 
             # Unflatten z and a

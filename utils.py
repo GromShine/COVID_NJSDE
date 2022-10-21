@@ -70,7 +70,7 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
         
         '''
         
-        plt.savefig(outpath + '/{:04d}_{:03d}_{}.png'.format(itr,batch_id[sid],appendix), dpi=320)
+        plt.savefig(outpath + '/{:04d}_{:03d}_{}.png'.format(itr,batch_id[sid],appendix), dpi=480)
         fig.clf()
         plt.close(fig)
 
@@ -126,7 +126,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
                  predict_first=True, rtol=1.0e-5, atol=1.0e-7, scale=1.0):
     # merge the sequences to create a sequence
     evnts_raw = sorted([(evnt[0],) + (sid,) + evnt[1:] for sid in range(len(batch)) for evnt in batch[sid]])
-    #取出随机batch里的(事件时间，事件发生在哪一维度/地区，事件类型)
+    # 取出随机batch里的(事件时间，事件发生在哪一维度/地区，事件类型)
     # set up grid
     tsave, gtid, evnts, tse = create_tsave(tspan[0], tspan[1], dt, evnts_raw, evnt_align)
     
@@ -148,15 +148,15 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     # input: t_total*county_num*(n1+n2)
     # output: t_total*couty_num*dim_N,每个维度,每个时间节点上、每个事件类型的lambda
     lmbda = params[..., :func.dim_N]
-    #print(lmbda.size())
-    #torch.Size([1815, 12, 12])
-    #取出了事件类型总数的lambda，我们这里只有一种事件类型
+    # print(lmbda.size())
+    # torch.Size([1815, 12, 12])
+    # 取出了事件类型总数的lambda，我们这里只有一种事件类型
     
     if gs_info is not None:
         lmbda[:, :, :] = torch.tensor(gs_info[0])
 
     
-    #通过学到的lambda函数积分求出loglikehood后半部分
+    # 通过学到的lambda函数积分求出loglikehood后半部分
     def integrate(tt, ll):
         lm = (ll[:-1, ...] + ll[1:, ...]) / 2.0
         dts = (tt[1:] - tt[:-1]).reshape((-1,)+(1,)*(len(lm.shape)-1)).float()
@@ -173,22 +173,22 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
         for evnt in tse:
             log_likelihood += torch.log(lmbda[evnt])
             if evnt[1] in seqs_happened:
-                #如果当前取出来的事件在我们batch的维度里
+                # 如果当前取出来的事件在我们batch的维度里
                 type_preds = torch.zeros(len(type_forecast))
-                #置0
+                # 置0
                 for tid, t in enumerate(type_forecast):
-                    #默认的tid和t全是0
+                    # 默认的tid和t全是0
                     loc = (np.searchsorted(tsavenp, tsave[evnt[0]].item()-t),) + evnt[1:-1]
-                    #在所有的事件时间和整点时间里，找出evnt[0]的时间-t放在哪里可以保持原序列不变
+                    # 在所有的事件时间和整点时间里，找出evnt[0]的时间-t放在哪里可以保持原序列不变
                     type_preds[tid] = lmbda[loc].argmax().item()
-                    #找出lambda强度最大的一项作为预测事件种类
+                    # 找出lambda强度最大的一项作为预测事件种类
                 et_error.append((type_preds != evnt[-1]).float())
-                #预测错了就加1
+                # 预测错了就加1
             seqs_happened.add(evnt[1])
-            #将当前事件加入到batch维度的set中
+            # 将当前事件加入到batch维度的set中
 
         METE = sum(et_error)/len(et_error) if len(et_error) > 0 else -torch.ones(len(type_forecast))
-        #平均每步预测错多少事件类型
+        # 平均每步预测错多少事件类型
 
     #print(log_likelihood,"like")
     #exit

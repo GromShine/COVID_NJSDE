@@ -81,11 +81,11 @@ if __name__ == '__main__':
     # dim_c,dim_h: In order to better simulate the time series, the latent state z(t)∈ R^n is further split into 
     # two vectors: c(t)∈ R^n1 encodes the internal state, and h(t)∈ R^n2 encodes the memory of 
     # events up to time t, where n = n1 + n2.
-    # dim_N,有多少种事件种类,这里最后的lambda函数,有多少事件种类就输出多少个lambda函数,如果设事件种类数量为1
+    # dim_N,有多少种事件种类,这里最后的lambda函数,有多少事件种类就输出多少个lambda函数
     # dt, forward时间间隔
     nseqs = len(TS)
 
-    TSTE = TS
+    #TSTE = TS
 
     A_matrix = Variable(0.01*torch.ones((county_num, county_num)), requires_grad= True)
     #初始化A-matrix
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     loss_meter = RunningAverageMeter()
-    # 设置计算移动平均值的函数
+    # 设置计算loss移动平均值的函数,
     
     # if read from history, then fit to maximize likelihood
     it = it0
@@ -121,10 +121,15 @@ if __name__ == '__main__':
             # clear out gradients for variables
             optimizer.zero_grad()
 
+            
             batch_id = np.arange(0,county_num,1)
             batch = [TS[seqid] for seqid in batch_id]
-
+            print(batch == TS)
+            exit
+    
             # forward pass
+            # z0: c0+h0
+            # tsave
             tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
                         tspan, dt, batch, args.evnt_align, A_matrix,predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             
@@ -149,7 +154,8 @@ if __name__ == '__main__':
             #print(A_matrix)
             #np.savetxt(r'result.txt',A_matrix.detach().numpy(), fmt='%f', delimiter=',')
             
-            print("iter: {}, current loss: {:10.4f}, running ave loss: {:10.4f}, type error: {}".format(it, loss.item()/len(batch), loss_meter.avg, mete), flush=True)
+            print("iter: {}, current loss: {:10.4f}, running ave loss: {:10.4f}, type error: {}".format(it, loss.item()/len(batch), 
+                                                                                            loss_meter.avg, mete), flush=True)
 
             # step
             optimizer.step()
@@ -168,5 +174,5 @@ if __name__ == '__main__':
                 trace_ = torch.stack(tuple(record[1] for record in reversed(func.backtrace)))
                 visualize('graph_result', tsave, trace, lmbda, tsave_, trace_, None, None, tsne, range(len(TS)), it)
                 #visualize('graph_result', tsave, trace, lmbda, None, None, None, None, tsne, range(len(TS)), it, appendix="testing")
-                print("iter: {:5d}, testing loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, 
-                                     loss.item()/len(TS), len(tsne)-len(TS), mete), flush=True)
+                #print("iter: {:5d}, testing loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, 
+                #                     loss.item()/len(TS), len(tsne)-len(TS), mete), flush=True)

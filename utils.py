@@ -177,7 +177,8 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     # input: t_total*county_num*(n1+n2)
     # output: t_total*couty_num*dim_N,每个维度,每个时间节点上、每个事件类型的lambda
     params = func.L(trace)
-    
+    print(len(params))
+    exit
     # print(lmbda.size())
     # torch.Size([1815, 12, 12])
     # 取出了事件类型总数dim_N的lambda

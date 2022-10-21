@@ -324,7 +324,7 @@ class ODEJumpFunc(nn.Module):
 
     def read_jump(self, t, z):
         print('read_jump')
-        exit
+     #   exit
         assert self.jump_type == "read", "read_jump must be called with jump_type = read"
         dz = torch.zeros(z.shape)
 

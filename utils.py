@@ -114,34 +114,34 @@ def create_tsave(tmin, tmax, dt, evnts_raw, evnt_align=False):
     gtid = [t2tid[t] for t in tgrid]
     
     # t(ime)s(equence)n(ode)e(vent)
-    # 发生事件对应的（时间位置,维度,事件类型）tuple
+    # 发生事件对应的（时间排序位次,维度,事件类型）tuple
     tse = [(t2tid[evnt[0]],) + evnt[1:] for evnt in evnts]
 
-    #返回全部时间+时间网格去重后的时间, 时间网格排序位置, 原输入时间维度类型元组, 发生事件的对应的（时间位置,维度,事件类型）元组
+    # 返回全部时间+时间网格去重后的时间, 时间网格排序位置, 原输入时间维度类型元组, 发生事件的对应的（时间位置,维度,事件类型）元组
     return torch.tensor(tsave), gtid, evnts, tse
 
 def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None, type_forecast=[0.0], 
                  predict_first=True, rtol=1.0e-5, atol=1.0e-7, scale=1.0):
     # merge the sequences to create a sequence
     
-    # 取出随机batch里的(事件时间,事件发生在哪一维度/地区,事件类型)
+    # batch里的(事件时间,事件发生在哪一维度/地区,事件类型)
     evnts_raw = sorted([(evnt[0],) + (sid,) + evnt[1:] for sid in range(len(batch)) for evnt in batch[sid]])
     
     # set up grid
+    # 全部时间+时间网格去重后的时间, 时间网格排序位置, 原输入时间维度类型元组, 发生事件的对应的（时间位置,维度,事件类型）元组
     tsave, gtid, evnts, tse = create_tsave(tspan[0], tspan[1], dt, evnts_raw, evnt_align)
     
-    #tse,发生事件对应的（时间排序位次,维度,事件类型）tuple
+    # same evnts_raw
     func.evnts = evnts
-    #func里的evnts就是外面的evnts_raw
     
     # convert to numpy array
+    # 所有事件时间+网格时间, the time to save state in ODE simulation
     tsavenp = tsave.numpy()
-    #所有的事件时间和整点时间, the time to save state in ODE simulation
     
-    # forward pass
+    # func: ODEJumpFunc
+    # z0: dim_N*(c0+h0) -> county_num * (n1+n2), 初始化所有维度的z0
+    # output: t_total * county_num * (c0+h0)
     trace = odeint_adjoint(func, z0.repeat(len(batch), 1), tsave, method='jump_adams', rtol=rtol, atol=atol)
-    # input: county_num * (n1+n2)
-    # output: t_total*county_num*(n1+n2)
     
     params = func.L(trace)
     

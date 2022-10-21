@@ -238,14 +238,14 @@ class ODEJumpFunc(nn.Module):
         return torch.cat((dcdt, dhdt), dim=-1)
 
     def next_simulated_jump(self, t0, z0, t1):
-        print('next_simulated_jump')
+        #print('next_simulated_jump',t0,t1)
         if not self.evnt_align:
             m = torch.distributions.Exponential(self.L(z0)[..., :self.dim_N].double())
             
             # next arrival time
             tt = t0 + m.sample()
-            print(len(tt))
-            print(tt)
+           # print(len(tt))
+           # print(tt)
             tt_min = tt.min()
 
             if tt_min <= t1:
@@ -253,9 +253,9 @@ class ODEJumpFunc(nn.Module):
             else:
                 dN = torch.zeros(tt.shape)
             
-            print(len(dN))
-            print(dN)
-            
+           # print(len(dN))
+           # print(dN)
+           # exit
             next_t = min(tt_min, t1)
         else:
             assert t0 < t1
@@ -271,7 +271,7 @@ class ODEJumpFunc(nn.Module):
         return dN, next_t
 
     def simulated_jump(self, dN, t, z):
-        print('simulated_jump')
+        #print('simulated_jump')
         assert self.jump_type == "simulate", "simulate_jump must be called with jump_type = simulate"
         dz = torch.zeros(z.shape)
         sequence = []
@@ -304,6 +304,7 @@ class ODEJumpFunc(nn.Module):
         return dz
 
     def next_read_jump(self, t0, t1):
+        print('next_read_jump')
         assert self.jump_type == "read", "next_read_jump must be called with jump_type = read"
         assert t0 != t1, "t0 can not equal t1"
 
@@ -322,6 +323,7 @@ class ODEJumpFunc(nn.Module):
         return t
 
     def read_jump(self, t, z):
+        print('read_jump')
         assert self.jump_type == "read", "read_jump must be called with jump_type = read"
         dz = torch.zeros(z.shape)
 

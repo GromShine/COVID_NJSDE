@@ -159,7 +159,7 @@ class OdeintAdjointMethod(torch.autograd.Function):
 
             time_vjps.append(adj_time)
             time_vjps = torch.cat(time_vjps[::-1])
-
+            print("123456")
             return (*adj_y, None, time_vjps, adj_params, None, None, None, None)
 
 
@@ -171,6 +171,7 @@ def odeint_adjoint(func, y0, t, rtol=1e-6, atol=1e-12, method=None, options=None
         raise ValueError('func is required to be an instance of nn.Module.')
 
     tensor_input = False
+    print("123456")
     if torch.is_tensor(y0):
 
         class TupleFunc(nn.Module):
@@ -207,7 +208,7 @@ def odeint_adjoint(func, y0, t, rtol=1e-6, atol=1e-12, method=None, options=None
             func = TupleFunc(func)
         else:
             func = TupleJumpFunc(func)
-    
+    print("123456")
     flat_params = _flatten(func.parameters())
     #print(len(flat_params),">>>>")
     #588
@@ -215,4 +216,5 @@ def odeint_adjoint(func, y0, t, rtol=1e-6, atol=1e-12, method=None, options=None
     ys = OdeintAdjointMethod.apply(*y0, func, t, flat_params, rtol, atol, method, options)
     if tensor_input:
         ys = ys[0]
+    print("123456")
     return ys

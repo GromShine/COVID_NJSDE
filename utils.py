@@ -4,8 +4,9 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import torch
-from torchdiffeq import odeint_adjoint as odeint
+from adjoint import odeint_adjoint as odeint
 from numbers import Number
+import inspect
 
 # taken fron ricky chen
 def logsumexp(value, dim=None, keepdim=False):
@@ -150,6 +151,8 @@ def create_tsave(tmin, tmax, dt, evnts_raw, evnt_align=False):
 def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None, type_forecast=[0.0], 
                  predict_first=True, rtol=1.0e-5, atol=1.0e-7, scale=1.0):
 #def forward_pass(func, z0, tspan, dt, batch, evnt_align, gs_info=None, type_forecast=[0.0], predict_first=True, rtol=1.0e-5, atol=1.0e-7, scale=1.0):
+    
+    #print(inspect.getfile(odeint))
     
     # merge the sequences to create a sequence
     # batch里的(事件时间,事件发生在哪一维度/地区,事件类型)

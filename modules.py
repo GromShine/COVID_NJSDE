@@ -74,6 +74,49 @@ class MLP(nn.Module):
 
         return self.linears[-1](x)
 
+# graph convolution unit
+class GCU(nn.Module):
+
+    def __init__(self, dim_c, dim_h=0, dim_hidden=20, num_hidden=0, activation=nn.CELU(), graph=None, aggregation=None):
+        super(GCU, self).__init__()
+
+        self.cur = nn.Sequential(MLP((dim_c+dim_h),   dim_hidden, dim_hidden, num_hidden, activation), activation)
+        self.nbr = nn.Sequential(MLP((dim_c+dim_h)*2, dim_hidden, dim_hidden, num_hidden, activation), activation)
+        self.out = nn.Linear(dim_hidden*2, dim_c)
+
+        nn.init.normal_(self.out.weight, mean=0, std=0.1)
+        nn.init.uniform_(self.out.bias, a=-0.1, b=0.1)
+
+        if graph is not None:
+            self.graph = graph
+        else:
+            self.graph = nx.Graph()
+            self.graph.add_node(0)
+
+        if aggregation is None:
+            self.aggregation = lambda vnbr: vnbr.sum(dim=-2)
+        else:
+            self.aggregation = aggregation
+
+    def forward(self, z):
+        assert len(z.shape) >= 2, 'z_ need to be >=2 dimensional vector accessed by [..., node_id, dim_id]'
+
+        curvv = self.cur(z)
+
+        def conv(nid):
+            env = list(self.graph.neighbors(nid))
+            if len(env) == 0:
+                nbrv = torch.zeros(curvv[nid].shape)
+            else:
+                nbrv = self.aggregation(self.nbr(torch.cat((z[..., [nid]*len(env), :], z[..., env, :]), dim=-1)))
+            return nbrv
+
+        nbrvv = torch.stack([conv(nid) for nid in self.graph.nodes()], dim=-2)
+
+        dcdt = self.out(torch.cat((curvv, nbrvv), dim=-1))
+
+        return dcdt
+
 
 # This function need to be stateless
 class ODEJumpFunc(nn.Module):
@@ -100,7 +143,7 @@ class ODEJumpFunc(nn.Module):
             self.F = GCU(dim_c, dim_h, dim_hidden, num_hidden, activation, aggregation, graph)
         else:
             self.F = MLP(dim_c+dim_h, dim_c, dim_hidden, num_hidden, activation)
-        #F is dynamics
+        #F is dynamics dc/dt
 
         self.G = nn.Sequential(MLP(dim_c, dim_h, dim_hidden, num_hidden, activation), nn.Softplus())
         #G表示event memory h(t)的衰减

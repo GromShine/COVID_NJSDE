@@ -74,50 +74,6 @@ class MLP(nn.Module):
 
         return self.linears[-1](x)
 
-# graph convolution unit
-class GCU(nn.Module):
-
-    def __init__(self, dim_c, dim_h=0, dim_hidden=20, num_hidden=0, activation=nn.CELU(), graph=None, aggregation=None):
-        super(GCU, self).__init__()
-
-        self.cur = nn.Sequential(MLP((dim_c+dim_h),   dim_hidden, dim_hidden, num_hidden, activation), activation)
-        self.nbr = nn.Sequential(MLP((dim_c+dim_h)*2, dim_hidden, dim_hidden, num_hidden, activation), activation)
-        self.out = nn.Linear(dim_hidden*2, dim_c)
-
-        nn.init.normal_(self.out.weight, mean=0, std=0.1)
-        nn.init.uniform_(self.out.bias, a=-0.1, b=0.1)
-
-        if graph is not None:
-            self.graph = graph
-        else:
-            self.graph = nx.Graph()
-            self.graph.add_node(0)
-
-        if aggregation is None:
-            self.aggregation = lambda vnbr: vnbr.sum(dim=-2)
-        else:
-            self.aggregation = aggregation
-
-    def forward(self, z):
-        assert len(z.shape) >= 2, 'z_ need to be >=2 dimensional vector accessed by [..., node_id, dim_id]'
-
-        curvv = self.cur(z)
-
-        def conv(nid):
-            env = list(self.graph.neighbors(nid))
-            if len(env) == 0:
-                nbrv = torch.zeros(curvv[nid].shape)
-            else:
-                nbrv = self.aggregation(self.nbr(torch.cat((z[..., [nid]*len(env), :], z[..., env, :]), dim=-1)))
-            return nbrv
-
-        nbrvv = torch.stack([conv(nid) for nid in self.graph.nodes()], dim=-2)
-
-        dcdt = self.out(torch.cat((curvv, nbrvv), dim=-1))
-
-        return dcdt
-
-
 # This function need to be stateless
 class ODEJumpFunc(nn.Module):
 
@@ -126,12 +82,12 @@ class ODEJumpFunc(nn.Module):
                  graph=None, aggregation=None):
         super(ODEJumpFunc, self).__init__()
 
-        self.dim_c = dim_c
-        self.dim_h = dim_h
+        self.dim_c = dim_c  # internal state
+        self.dim_h = dim_h  # event memory with decay
         self.dim_N = dim_N  # number of event type
         self.dim_E = dim_E  # dimension for encoding of event itself
-        self.ortho = ortho
-        self.evnt_embedding = evnt_embedding
+        self.ortho = ortho  # default false
+        self.evnt_embedding = evnt_embedding  # defalut discrete
 
         assert jump_type in ["simulate", "read"], "invalide jump_type, must be one of [simulate, read]"
         self.jump_type = jump_type
@@ -139,49 +95,45 @@ class ODEJumpFunc(nn.Module):
         self.evnts = evnts
         self.evnt_align = evnt_align
 
-        if graph is not None:
-            self.F = GCU(dim_c, dim_h, dim_hidden, num_hidden, activation, aggregation, graph)
-        else:
+        # F is dynamics for c(t), dc/dt = F(z)
+        if graph is None:
             self.F = MLP(dim_c+dim_h, dim_c, dim_hidden, num_hidden, activation)
-        #F is dynamics dc/dt
-
+        
+        # G is the decay effect of event memory h(t)
         self.G = nn.Sequential(MLP(dim_c, dim_h, dim_hidden, num_hidden, activation), nn.Softplus())
-        #G表示event memory h(t)的衰减
-
+        
         if evnt_embedding == "discrete":
             assert dim_E == dim_N, "if event embedding is discrete, then use one dimension for each event type"
             self.evnt_embed = lambda k: (torch.arange(0, dim_E) == k).float()
+            
             # output is a dim_N vector, each represent conditional intensity of a type of event
+            # L is λ(z(t))
             self.L = nn.Sequential(MLP(dim_c+dim_h, dim_N, dim_hidden, num_hidden, activation), SoftPlus())
             
-        elif evnt_embedding == "continuous":
-            self.evnt_embed = lambda k: torch.tensor(k)
-            # output is a dim_N*(1+2*dim_E) vector, represent coefficients, mean and log variance of dim_N unit gaussian intensity function
-            self.L = nn.Sequential(MLP(dim_c+dim_h, dim_N*(1+2*dim_E), dim_hidden, num_hidden, activation), SoftPlus(dim=dim_N))
         else:
             raise Exception('evnt_type must either be discrete or continuous')
-        # L是强度lambda(z(t))    
+         
+        # W is jump function: dim_c + dim_E -> dim_h
+        self.W = MLP(dim_c + dim_E, dim_h, dim_hidden, num_hidden, activation)
         
-        self.W = MLP(dim_c+dim_E, dim_h, dim_hidden, num_hidden, activation)
-        # W是jump function
 
         self.backtrace = []
 
     def forward(self, t, z):
-        c = z[..., :self.dim_c] #将c和h重新分开，c是前半部分
-        h = z[..., self.dim_c:] #h是后半部分
+        # f(z(t)) include dc/dt, dh/dt
+        c = z[..., :self.dim_c] # 将c和h重新分开，c是前半部分
+        h = z[..., self.dim_c:] # h是后半部分
         
+        # F: dim_c + dim_h -> dim_c
         dcdt = self.F(z)
-        # orthogonalize dc w.r.t. to c
-        if self.ortho:
-            dcdt = dcdt - (dcdt*c).sum(dim=-1, keepdim=True) / (c*c).sum(dim=-1, keepdim=True) * c
-
+        
+        # G: dim_c -> dim_h
         dhdt = -self.G(c) * h
-
+        
         return torch.cat((dcdt, dhdt), dim=-1)
 
     def next_simulated_jump(self, t0, z0, t1):
-
+        # thinalgo
         if not self.evnt_align:
             m = torch.distributions.Exponential(self.L(z0)[..., :self.dim_N].double())
             # next arrival time
@@ -247,6 +199,8 @@ class ODEJumpFunc(nn.Module):
         inf = sys.maxsize
         if t0 < t1:  # forward
             idx = bisect.bisect_right(self.evnts, (t0, inf, inf, inf))
+            #print(idx)
+            #exit
             if idx != len(self.evnts):
                 t = min(t1, torch.tensor(self.evnts[idx][0], dtype=torch.float64))
         else:  # backward

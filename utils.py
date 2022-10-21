@@ -78,59 +78,59 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
 # this function takes in a time series and create a grid for modeling it
 # it takes an array of sequences of three tuples, and extend it to four tuple
 def create_tsave(tmin, tmax, dt, evnts_raw, evnt_align=False):
-    """
-    :param tmin: min time of sequence
-    :param tmax: max time of the sequence
-    :param dt: step size
-    :param evnts_raw: tuple (raw_time, ...)
-    :param evnt_align: whether to round the event time up to the next grid point
-    :return tsave: the time to save state in ODE simulation
-    :return gtid: grid time id
-    :return evnts: tuple (rounded_time, ...)
-    :return tse: tuple (event_time_id, ...)
-    """
+    
+    # param tmin: min time of sequence
+    # param tmax: max time of the sequence
+    # param dt: step size
+    # param evnts_raw: (事件时间,事件发生在哪一维度/地区,事件类型)
+    # param evnt_align: whether to round the event time up to the next grid point
+    # return tsave: the time to save state in ODE simulation
+    # return gtid: grid time id
+    # return evnts: tuple (rounded_time, ...)
+    # return tse: tuple (event_time_id, ...)
 
     if evnt_align:
         tc = lambda t: np.round(np.ceil((t-tmin) / dt) * dt + tmin, decimals=8)
     else:
         tc = lambda t: t
-
+    # 如果align是true,对时间点进行取整处理,否则不变,原来的时间点序列
+    # evnts: (事件时间,事件发生在哪一维度/地区,事件类型)
     evnts = [(tc(evnt[0]),) + evnt[1:] for evnt in evnts_raw if tmin < tc(evnt[0]) < tmax]
-    #如果align是true，对时间点进行取整处理，否则不变，原来的时间点序列
     
+    # 时间网格,步长0.05,from tmin to tmax
     tgrid = np.round(np.arange(tmin, tmax+dt, dt), decimals=8)
-    #画出时间网格，dt=0.05，总时长100
     
+    # 将全部事件的时间取出来单独存放
     tevnt = np.array([evnt[0] for evnt in evnts])
-    #全部事件对应的时间
-    
+        
+    # 将全部事件时间和时间网格合并后去重排序
     tsave = np.sort(np.unique(np.concatenate((tgrid, tevnt))))
-    #将全部事件对应时间和时间网格合并后去重
     
+    # time_to_timeid, 时间去重后的所有时间里的排序位置
     t2tid = {t: tid for tid, t in enumerate(tsave)}
-    #时间和时间在去重后的所有时间里的排序位置
     
-    # g(rid)tid
-    # t(ime)s(equence)n(ode)e(vent)
+    # gridtime_id
+    # 时间网格在去重后所有时间里的排序位置
     gtid = [t2tid[t] for t in tgrid]
-    #整点时间网络在去重后所有时间里的排序位置
     
+    # t(ime)s(equence)n(ode)e(vent)
+    # 发生事件对应的（时间位置,维度,事件类型）tuple
     tse = [(t2tid[evnt[0]],) + evnt[1:] for evnt in evnts]
-    
-    #找出发生事件对应的（时间，维度，事件类型）tuple
-    return torch.tensor(tsave), gtid, evnts, tse
-    #返回全部时间+时间网络去重总时间，整点时间网络排序位置，原输入时间维度类型元组，发生事件的元组
 
+    #返回全部时间+时间网格去重后的时间, 时间网格排序位置, 原输入时间维度类型元组, 发生事件的对应的（时间位置,维度,事件类型）元组
+    return torch.tensor(tsave), gtid, evnts, tse
 
 def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None, type_forecast=[0.0], 
                  predict_first=True, rtol=1.0e-5, atol=1.0e-7, scale=1.0):
     # merge the sequences to create a sequence
+    
+    # 取出随机batch里的(事件时间,事件发生在哪一维度/地区,事件类型)
     evnts_raw = sorted([(evnt[0],) + (sid,) + evnt[1:] for sid in range(len(batch)) for evnt in batch[sid]])
-    # 取出随机batch里的(事件时间，事件发生在哪一维度/地区，事件类型)
+    
     # set up grid
     tsave, gtid, evnts, tse = create_tsave(tspan[0], tspan[1], dt, evnts_raw, evnt_align)
     
-    #tse,发生事件对应的（时间排序位次，维度，事件类型）tuple
+    #tse,发生事件对应的（时间排序位次,维度,事件类型）tuple
     func.evnts = evnts
     #func里的evnts就是外面的evnts_raw
     
@@ -150,7 +150,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     lmbda = params[..., :func.dim_N]
     # print(lmbda.size())
     # torch.Size([1815, 12, 12])
-    # 取出了事件类型总数的lambda，我们这里只有一种事件类型
+    # 取出了事件类型总数的lambda,我们这里只有一种事件类型
     
     if gs_info is not None:
         lmbda[:, :, :] = torch.tensor(gs_info[0])
@@ -165,7 +165,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     log_likelihood = -integrate(tsave, lmbda)
         
     
-    # set of sequences where at least one event has happened，一个batch大小的set
+    # set of sequences where at least one event has happened,一个batch大小的set
     seqs_happened = set(sid for sid in range(len(batch))) if predict_first else set()
     
     if func.evnt_embedding == "discrete":
@@ -179,7 +179,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
                 for tid, t in enumerate(type_forecast):
                     # 默认的tid和t全是0
                     loc = (np.searchsorted(tsavenp, tsave[evnt[0]].item()-t),) + evnt[1:-1]
-                    # 在所有的事件时间和整点时间里，找出evnt[0]的时间-t放在哪里可以保持原序列不变
+                    # 在所有的事件时间和整点时间里,找出evnt[0]的时间-t放在哪里可以保持原序列不变
                     type_preds[tid] = lmbda[loc].argmax().item()
                     # 找出lambda强度最大的一项作为预测事件种类
                 et_error.append((type_preds != evnt[-1]).float())

@@ -53,9 +53,12 @@ def read_event_time(scale=1.0, h_dt=0.0, t_dt=0.0):
         for seq in seqs:
             mark_seqs.append([int(k) for k in seq.split()])
 
+    # marks to mark_id
     m2mid = {m: mid for mid, m in enumerate(np.unique(sum(mark_seqs, [])))}
 
+    # [[(t1_1,mk1_1),(t2_1,mk2_1)],[(t1_2,mk1_2),(t2_2,mk2_2)],[]]
     evnt_seqs = [[((h_dt+time-tmin)*scale, m2mid[mark]) for time, mark in zip(time_seq, mark_seq)] for time_seq, mark_seq in zip(time_seqs, mark_seqs)]
+    
     #random.shuffle(evnt_seqs)
 
     return evnt_seqs, (0.0, ((tmax+t_dt)-(tmin-h_dt))*scale)
@@ -74,7 +77,7 @@ if __name__ == '__main__':
     
     TS, tspan = read_event_time(1.0, 1.0, 1.0)
     # TimeSequences, 全部事件(时间,事件类型)元组
-    # tspn, 时间范围
+    # tspn, 时间范围, (min_t, max_t)
     county_num = len(TS)
     # 维度
     dim_c, dim_h, dim_N, dt = 10, 10, county_num, 0.05
@@ -121,11 +124,10 @@ if __name__ == '__main__':
             # clear out gradients for variables
             optimizer.zero_grad()
 
+            batch = TS
+            #batch_id = np.arange(0,county_num,1)
+            #batch = [TS[seqid] for seqid in batch_id]
             
-            batch_id = np.arange(0,county_num,1)
-            batch = [TS[seqid] for seqid in batch_id]
-            print(batch == TS)
-            exit
     
             # forward pass
             # z0: c0+h0

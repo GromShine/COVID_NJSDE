@@ -183,5 +183,5 @@ if __name__ == '__main__':
     # simulate events
     func.jump_type="simulate"
     print("for simulate visual")
-    tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, [[]]*10, args.evnt_align)
-    visualize('graph_result2', tsave, trace, lmbda, None, None, None, None, tsne, range(10), it, appendix="simulate")    
+    tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, [[]]*1, args.evnt_align,A_matrix)
+    visualize('graph_result2', tsave, trace, lmbda, None, None, None, None, tsne, range(1), it, appendix="simulate")    

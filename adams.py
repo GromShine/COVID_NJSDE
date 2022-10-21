@@ -92,8 +92,10 @@ class VariableCoefficientAdamsBashforth(AdaptiveStepsizeODESolver):
         self.vcabm_state = _VCABMState(self.y0, prev_f, prev_t, next_t=t[0]+first_step, phi=phi, order=1)
 
     def advance(self, final_t):
+        
         final_t = _convert_to_tensor(final_t).to(self.vcabm_state.prev_t[0])
         while final_t > self.vcabm_state.prev_t[0]:
+            print('before _adaptive_adams_step')
             self.vcabm_state = self._adaptive_adams_step(self.vcabm_state, final_t)
         assert final_t == self.vcabm_state.prev_t[0]
         return self.vcabm_state.y_n

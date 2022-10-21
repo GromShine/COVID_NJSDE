@@ -15,14 +15,16 @@ class OdeintAdjointMethod(torch.autograd.Function):
         ctx.func, ctx.rtol, ctx.atol, ctx.method, ctx.options = func, rtol, atol, method, options
         
         with torch.no_grad():
+            print('before odeint')
             ans = odeint(func, y0, t, rtol=rtol, atol=atol, method=method, options=options)
+            print('afteer odeint')
             #跳转到odeint.py
         ctx.save_for_backward(t, flat_params, *ans)
         return ans
 
     @staticmethod
     def backward(ctx, *grad_output):
-        print('before T')
+
         t, flat_params, *ans = ctx.saved_tensors
         ans = tuple(ans)
         func, rtol, atol, method, options = ctx.func, ctx.rtol, ctx.atol, ctx.method, ctx.options

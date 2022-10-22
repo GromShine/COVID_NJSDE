@@ -55,7 +55,7 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
         axe.set_ylim(0, 12.0)
         axe2 = axe.twinx()
         axe2.set_ylabel('intensity')
-        axe2.set_ylim(0.1, 1.1)
+        axe2.set_ylim(0.3, 1.2)
         '''
         # plot the state function
         if (tsave is not None) and (trace is not None):

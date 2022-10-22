@@ -47,7 +47,7 @@ def create_outpath(dataset):
 def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, batch_id, itr, gsmean=None, gsvar=None, scale=1.0, appendix=""):
     # torch.Size([1815, 12, 12])
     for sid in range(lmbda.shape[1]):
-        fig = plt.figure(figsize=(10, 10), facecolor='white')
+        fig = plt.figure(figsize=(20, 10), facecolor='white')
         axe = plt.gca()
         axe.set_title('Point Process Modeling')
         axe.set_xlabel('time')
@@ -55,7 +55,7 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
         axe.set_ylim(0, 12.0)
         axe2 = axe.twinx()
         axe2.set_ylabel('intensity')
-        axe2.set_ylim(0, 1)
+        axe2.set_ylim(0.1, 1.1)
         '''
         # plot the state function
         if (tsave is not None) and (trace is not None):

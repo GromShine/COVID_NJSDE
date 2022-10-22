@@ -159,7 +159,7 @@ class OdeintAdjointMethod(torch.autograd.Function):
 
             time_vjps.append(adj_time)
             time_vjps = torch.cat(time_vjps[::-1])
-            print("123456")
+            
             return (*adj_y, None, time_vjps, adj_params, None, None, None, None)
 
 

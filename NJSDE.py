@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 signal.signal(signal.SIGINT, lambda sig, frame: sys.exit(0))
 
 parser = argparse.ArgumentParser('stack_overflow')
-parser.add_argument('--niters', type=int, default=1)
+parser.add_argument('--niters', type=int, default=100)
 parser.add_argument('--jump_type', type=str, default='read')
 parser.add_argument('--paramr', type=str, default='params.pth')
 parser.add_argument('--paramw', type=str, default='params.pth')
@@ -121,6 +121,7 @@ if __name__ == '__main__':
     it = it0
     if func.jump_type == "read":
         while it < args.niters:
+            func.jump_type = "read"
             # clear out gradients for variables
             optimizer.zero_grad()
 
@@ -171,8 +172,11 @@ if __name__ == '__main__':
             if it % args.nsave == 0:
                 # save
                 print("iter for save")
+                
                 torch.save({'func_state_dict': func.state_dict(), 'c0': c0, 'h0': h0, 'it0': it, 'optimizer_state_dict': optimizer.state_dict()}, outpath + '/' + '{:05d}'.format(it) + args.paramw)
-                tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, TS, args.evnt_align)
+                '''
+                tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
+                                    tspan, dt, TS, args.evnt_align,A_matrix)
 
                 # backward prop
                 func.backtrace.clear()
@@ -183,6 +187,12 @@ if __name__ == '__main__':
                 tsave_ = torch.tensor([record[0] for record in reversed(func.backtrace)])
                 trace_ = torch.stack(tuple(record[1] for record in reversed(func.backtrace)))
                 visualize(outpath, tsave, trace, lmbda, tsave_, trace_, None, None, tsne, range(len(TS)), it)
+                '''
+                func.jump_type="simulate"
+                print("for simulate visual")
+                tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
+                                                                           tspan, dt, [[]]*1, args.evnt_align,A_matrix)
+                visualize('graph_result2', tsave, trace, lmbda, None, None, None, None, tsne, range(1), it, appendix="simulate")
 
     # simulate events
     func.jump_type="simulate"

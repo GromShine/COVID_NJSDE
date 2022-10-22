@@ -142,7 +142,6 @@ if __name__ == '__main__':
                         tspan, dt, batch, args.evnt_align, A_matrix, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             #tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
             #                            tspan, dt, batch, args.evnt_align, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
-            print(type(tsave))
             
             loss_meter.update(loss.item() / len(batch))
 
@@ -199,7 +198,7 @@ if __name__ == '__main__':
                 tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, 
                              torch.cat((c0, h0), dim=-1), tspan, dt, [[]]*1, args.evnt_align,A_matrix)
                 
-                print(type(tsave))
+                #print(type(tsave))
                 
                 # after simulate, you need to recreate tsave and tsne
                 #tsave = 
@@ -223,13 +222,12 @@ if __name__ == '__main__':
                 
                 tevnt = np.array([evnt[0] for evnt in evnts])
                 
-                tsave = np.sort(np.unique(np.concatenate((tgrid, tevnt))))
+                tsave_s = np.sort(np.unique(np.concatenate((tgrid, tevnt))))
                 
-                tsave = torch.tensor(tsave)
-                print(len(tsave))
-                print(tsave)
+                print(len(tsave_s))
+                print(tsave_s)
                 
-                t2tid = {t: tid for tid, t in enumerate(tsave)}
+                t2tid = {t: tid for tid, t in enumerate(tsave_s)}
 
                 gtid = [t2tid[t] for t in tgrid]
                 
@@ -237,8 +235,10 @@ if __name__ == '__main__':
                 
                 print(len(tse))
                 print(tse)
+                tsave_s = torch.tensor(tsave_s)
                 
-                visualize('graph_result2', tsave, trace, lmbda, None, None, None, None, tse, range(1), it, appendix="simulate")
+                visualize('graph_result2', tsave, trace, lmbda, None, None, None, None,
+                          tse, range(1), it, appendix="simulate",tsave_simu = tsave_s)
 
     # simulate events
     func.jump_type="simulate"

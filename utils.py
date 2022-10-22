@@ -44,7 +44,7 @@ def create_outpath(dataset):
     return outpath
 
 
-def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, batch_id, itr, gsmean=None, gsvar=None, scale=1.0, appendix=""):
+def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, batch_id, itr, tsave_simu = None,gsmean=None, gsvar=None, scale=1.0, appendix=""):
     # torch.Size([1815, 12, 12])
     for sid in range(lmbda.shape[1]):
         fig = plt.figure(figsize=(20, 10), facecolor='white')
@@ -82,7 +82,10 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
         if tse is not None:
             tse_current = [evnt for evnt in tse if evnt[1] == sid]
             # continue...
-            tevnt = np.array([tsave[evnt[0]] for evnt in tse_current])
+            if tsave_simu!=None:
+                tevnt = np.array([tsave_simu[evnt[0]] for evnt in tse_current])
+            else:
+                tevnt = np.array([tsave[evnt[0]] for evnt in tse_current])
             kevnt = np.array([evnt[2] if not (type(evnt[2]) == list) else evnt[2][0] for evnt in tse_current])
             axe.scatter(tevnt, kevnt*scale, 1.5)
         #'''
@@ -137,8 +140,6 @@ def create_tsave(tmin, tmax, dt, evnts_raw, evnt_align=False):
     # 将全部事件时间和时间网格合并后去重排序
     tsave = np.sort(np.unique(np.concatenate((tgrid, tevnt))))
     
-
-    
     # time_to_timeid, 时间去重后的所有时间里的排序位置
     t2tid = {t: tid for tid, t in enumerate(tsave)}
 
@@ -166,6 +167,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     
     # set up grid
     tsave, gtid, evnts, tse = create_tsave(tspan[0], tspan[1], dt, evnts_raw, evnt_align)
+    
     
     # same evnts_raw
     func.evnts = evnts

@@ -137,6 +137,8 @@ def create_tsave(tmin, tmax, dt, evnts_raw, evnt_align=False):
     # 将全部事件时间和时间网格合并后去重排序
     tsave = np.sort(np.unique(np.concatenate((tgrid, tevnt))))
     
+
+    
     # time_to_timeid, 时间去重后的所有时间里的排序位置
     t2tid = {t: tid for tid, t in enumerate(tsave)}
 

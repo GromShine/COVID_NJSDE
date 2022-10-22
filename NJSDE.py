@@ -142,6 +142,7 @@ if __name__ == '__main__':
                         tspan, dt, batch, args.evnt_align, A_matrix, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             #tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
             #                            tspan, dt, batch, args.evnt_align, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
+            print(type(tsave))
             
             loss_meter.update(loss.item() / len(batch))
 
@@ -198,6 +199,8 @@ if __name__ == '__main__':
                 tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, 
                              torch.cat((c0, h0), dim=-1), tspan, dt, [[]]*1, args.evnt_align,A_matrix)
                 
+                print(type(tsave))
+                
                 # after simulate, you need to recreate tsave and tsne
                 #tsave = 
                 
@@ -206,15 +209,36 @@ if __name__ == '__main__':
                 for ti in range(len(func.evnts)):
                     tmp_tuple = []
                     for tj in range(len(func.evnts[ti])):
-                        if tj!=1:
-                            tmp_tuple.append(func.evnts[ti][tj].item())
+                        tmp_tuple.append(func.evnts[ti][tj].item())
                     simu_evnts.append(tuple(tmp_tuple))
-                        
+                
                 #simu_evnts = func.evnts
                 #print(simu_evnts)
                 print(len(simu_evnts))
                 print(simu_evnts)
-                visualize('graph_result2', tsave, trace, lmbda, None, None, None, None, simu_evnts, range(1), it, appendix="simulate")
+                
+                evnts = [((evnt[0]),) + evnt[1:] for evnt in simu_evnts if tspan[0] < (evnt[0]) < tspan[1]]
+                
+                tgrid = np.round(np.arange(tspan[0], tspan[1]+dt, dt), decimals=8)
+                
+                tevnt = np.array([evnt[0] for evnt in evnts])
+                
+                tsave = np.sort(np.unique(np.concatenate((tgrid, tevnt))))
+                
+                tsave = torch.tensor(tsave)
+                print(len(tsave))
+                print(tsave)
+                
+                t2tid = {t: tid for tid, t in enumerate(tsave)}
+
+                gtid = [t2tid[t] for t in tgrid]
+                
+                tse = [(t2tid[evnt[0]],) + evnt[1:] for evnt in evnts]
+                
+                print(len(tse))
+                print(tse)
+                
+                visualize('graph_result2', tsave, trace, lmbda, None, None, None, None, tse, range(1), it, appendix="simulate")
 
     # simulate events
     func.jump_type="simulate"

@@ -45,6 +45,7 @@ def create_outpath(dataset):
 
 
 def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, batch_id, itr, gsmean=None, gsvar=None, scale=1.0, appendix=""):
+    # torch.Size([1815, 12, 12])
     for sid in range(lmbda.shape[1]):
         fig = plt.figure(figsize=(10, 10), facecolor='white')
         axe = plt.gca()
@@ -174,7 +175,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     
     trace = odeint(func, z0.repeat(len(batch), 1), tsave, method='jump_adams', rtol=rtol, atol=atol)
     # input: t_total*county_num*(n1+n2)
-    # output: t_total*couty_num*dim_N,每个维度,每个时间节点上、每个事件类型的lambda
+    # output: t_total*couty_num*dim_N,每个时间节点,每个维度,每个事件类型的lambda
     # torch.Size([1815, 12, 20])
     
     # params Size([1815, 12, 12])
@@ -193,15 +194,12 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
 
     # 通过学到的lambda函数积分求出loglikehood后半部分
     def integrate(tt, ll):
-        print(ll.size())
-        print(ll[:-1, ...].size())
-        print(ll[1:, ...].size())
-        print('A',ll)
-        print('B',ll[:-1, ...])
-        print('C',ll[1:,...])
-        exit
+        # 上底加下底乘以高除以2，去掉最后一个的序列，去掉第一个的序列，组成λ的上底和下底
+        # torch.Size([1814, 12, 12])
         lm = (ll[:-1, ...] + ll[1:, ...]) / 2.0
-        dts = (tt[1:] - tt[:-1]).reshape((-1,)+(1,)*(len(lm.shape)-1)).float()
+        
+        # 求出每段的高(时间间隔)
+        dts = (tt[1:] - tt[:-1]).reshape((-1,) + (1,)*(len(lm.shape)-1)).float()
         return (lm * dts).sum()
 
     log_likelihood = -integrate(tsave, lmbda)

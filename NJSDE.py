@@ -58,6 +58,7 @@ def read_event_time(scale=1.0, h_dt=0.0, t_dt=0.0):
     m2mid = {m: mid for mid, m in enumerate(np.unique(sum(mark_seqs, [])))}
 
     # [[(t1_1,mk1_1),(t2_1,mk2_1)],[(t1_2,mk1_2),(t2_2,mk2_2)],[]]
+    # 时间归一化，最小时间从h_dt=1.0开始
     evnt_seqs = [[((h_dt+time-tmin)*scale, m2mid[mark]) for time, mark in zip(time_seq, mark_seq)] for time_seq, mark_seq in zip(time_seqs, mark_seqs)]
     
     return evnt_seqs, (0.0, ((tmax+t_dt)-(tmin-h_dt))*scale)
@@ -141,6 +142,7 @@ if __name__ == '__main__':
                         tspan, dt, batch, args.evnt_align, A_matrix, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             #tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
             #                            tspan, dt, batch, args.evnt_align, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
+            
             loss_meter.update(loss.item() / len(batch))
 
             # backward prop
@@ -190,9 +192,29 @@ if __name__ == '__main__':
                 '''
                 func.jump_type="simulate"
                 print("for simulate visual")
-                tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
-                                                                           tspan, dt, [[]]*1, args.evnt_align,A_matrix)
-                visualize('graph_result2', tsave, trace, lmbda, None, None, None, None, tsne, range(1), it, appendix="simulate")
+                #print(len(func.evnts))
+                #print(type(func.evnts[0]))
+                #print(func.evnts)
+                tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, 
+                             torch.cat((c0, h0), dim=-1), tspan, dt, [[]]*1, args.evnt_align,A_matrix)
+                
+                # after simulate, you need to recreate tsave and tsne
+                #tsave = 
+                
+                #print(len(func.evnts))
+                simu_evnts = []
+                for ti in range(len(func.evnts)):
+                    tmp_tuple = []
+                    for tj in range(len(func.evnts[ti])):
+                        if tj!=1:
+                            tmp_tuple.append(func.evnts[ti][tj].item())
+                    simu_evnts.append(tuple(tmp_tuple))
+                        
+                #simu_evnts = func.evnts
+                #print(simu_evnts)
+                print(len(simu_evnts))
+                print(simu_evnts)
+                visualize('graph_result2', tsave, trace, lmbda, None, None, None, None, simu_evnts, range(1), it, appendix="simulate")
 
     # simulate events
     func.jump_type="simulate"

@@ -147,6 +147,7 @@ def create_tsave(tmin, tmax, dt, evnts_raw, evnt_align=False):
     # t(ime)s(equence)n(ode)e(vent)
     # 发生事件对应的（时间排序位次,维度,事件类型）tuple
     tse = [(t2tid[evnt[0]],) + evnt[1:] for evnt in evnts]
+    
 
     # 返回全部时间+时间网格去重后的时间, 时间网格排序位置, 原输入时间维度类型元组, 发生事件tuple(时间位置,维度,事件类型元组)
     return torch.tensor(tsave), gtid, evnts, tse
@@ -160,7 +161,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     # merge the sequences to create a sequence
     # batch里的(事件时间,事件发生在哪一维度/地区,事件类型)
     evnts_raw = sorted([(evnt[0],) + (sid,) + evnt[1:] for sid in range(len(batch)) for evnt in batch[sid]])
-
+    
     # set up grid
     tsave, gtid, evnts, tse = create_tsave(tspan[0], tspan[1], dt, evnts_raw, evnt_align)
     

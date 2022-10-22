@@ -187,7 +187,6 @@ def odeint_adjoint(func, y0, t, rtol=1e-6, atol=1e-12, method=None, options=None
                 super(TupleJumpFunc, self).__init__(func)
                 self.jump_type = self.func.jump_type
             
-            #继承ODEJumpFunc的next_simulated_jump,simulated_jump,next_read_jump,read_jump
             def next_simulated_jump(self, t0, y0, t1):
                 return self.func.next_simulated_jump(t0, y0[0], t1)
 

@@ -227,5 +227,5 @@ class VariableCoefficientJumpAdamsBashforth(VariableCoefficientAdamsBashforth):
         if (dy is not None) and dy[0].abs().sum() != 0:
             y1 = tuple(y1_+dy_ for y1_, dy_ in zip(y1, dy))
             order = 1
-
+        
         return _VCABMState(y1, prev_f, prev_t, next_t, prev_phi, order)

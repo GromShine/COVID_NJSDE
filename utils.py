@@ -51,9 +51,11 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
         axe = plt.gca()
         axe.set_title('Point Process Modeling')
         axe.set_xlabel('time')
-        axe.set_ylabel('intensity')
-        axe.set_ylim(-30.0, 30.0)
-
+        axe.set_ylabel('dimension')
+        axe.set_ylim(0, 12.0)
+        axe2 = axe.twinx()
+        axe2.set_ylabel('intensity')
+        axe2.set_ylim(0, 1)
         '''
         # plot the state function
         if (tsave is not None) and (trace is not None):
@@ -69,12 +71,12 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
                 plt.plot(tsave_.numpy(), dat, linewidth=0.2, linestyle="dotted", color="black")
         '''
         
-        '''
+        #'''
         # plot the intensity function
         if (grid is not None) and (lmbda_real is not None):
-            plt.plot(grid.numpy(), lmbda_real[sid], linewidth=1.0, color="gray")
-        plt.plot(tsave.numpy(), lmbda[:, sid, :].detach().numpy(), linewidth=0.7)
-        '''
+            axe2.plot(grid.numpy(), lmbda_real[sid], linewidth=1.0, color="gray")
+        axe2.plot(tsave.numpy(), lmbda[:, sid, :].detach().numpy(), linewidth=0.7)
+        #'''
         
         #'''
         if tse is not None:
@@ -82,7 +84,7 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
             # continue...
             tevnt = np.array([tsave[evnt[0]] for evnt in tse_current])
             kevnt = np.array([evnt[2] if not (type(evnt[2]) == list) else evnt[2][0] for evnt in tse_current])
-            plt.scatter(tevnt, kevnt*scale, 1.5)
+            axe.scatter(tevnt, kevnt*scale, 1.5)
         #'''
         
         '''

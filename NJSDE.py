@@ -22,10 +22,10 @@ parser.add_argument('--niters', type=int, default=1)
 parser.add_argument('--jump_type', type=str, default='read')
 parser.add_argument('--paramr', type=str, default='params.pth')
 parser.add_argument('--paramw', type=str, default='params.pth')
-parser.add_argument('--batch_size', type=int, default=12)
+parser.add_argument('--batch_size', type=int, default=1)
 parser.add_argument('--nsave', type=int, default=1)
 parser.add_argument('--fold', type=int, default=0)
-parser.add_argument('--dataset', type=str, default='m1')
+parser.add_argument('--dataset', type=str, default='n1')
 # small example data use 'm1' : Massachusetts from 20200928 to 20201228
 # big example data use 'c1': california from 20200928 to 20201228
 
@@ -80,7 +80,8 @@ if __name__ == '__main__':
     TS, tspan = read_event_time(1.0, 1.0, 1.0)
     
     # 维度
-    county_num = len(TS)
+    #county_num = len(TS)
+    county_num = 12
     
     # dim_c,dim_h: In order to better simulate the time series, the latent state z(t)∈ R^n is further split into 
     # two vectors: c(t)∈ R^n1 encodes the internal state, and h(t)∈ R^n2 encodes the memory of 
@@ -171,6 +172,17 @@ if __name__ == '__main__':
                 # save
                 print("iter for save")
                 torch.save({'func_state_dict': func.state_dict(), 'c0': c0, 'h0': h0, 'it0': it, 'optimizer_state_dict': optimizer.state_dict()}, outpath + '/' + '{:05d}'.format(it) + args.paramw)
+                tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), tspan, dt, TS, args.evnt_align)
+
+                # backward prop
+                func.backtrace.clear()
+                loss.backward()
+                print("iter: {:5d}, validation loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, loss.item()/len(TS), len(tsne), mete), flush=True)
+
+                # visualize
+                tsave_ = torch.tensor([record[0] for record in reversed(func.backtrace)])
+                trace_ = torch.stack(tuple(record[1] for record in reversed(func.backtrace)))
+                visualize(outpath, tsave, trace, lmbda, tsave_, trace_, None, None, tsne, range(len(TS)), it)
 
     # simulate events
     func.jump_type="simulate"

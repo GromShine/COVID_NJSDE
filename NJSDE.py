@@ -36,7 +36,8 @@ parser.add_argument('--seed0', dest='seed0', action='store_true')
 parser.add_argument('--debug', dest='debug', action='store_true')
 args = parser.parse_args()
 
-outpath = 'graph2'
+outpath_para = 'para_save'
+outpath_graph = 'graph_result3'
 
 def read_event_time(scale=1.0, h_dt=0.0, t_dt=0.0):
     time_seqs = []
@@ -175,21 +176,26 @@ if __name__ == '__main__':
                 # save
                 print("iter for save")
                 
-                torch.save({'func_state_dict': func.state_dict(), 'c0': c0, 'h0': h0, 'it0': it, 'optimizer_state_dict': optimizer.state_dict()}, outpath + '/' + '{:05d}'.format(it) + args.paramw)
-                '''
+                torch.save({'func_state_dict': func.state_dict(), 'c0': c0, 'h0': h0, 'it0': it, 
+                            'optimizer_state_dict': optimizer.state_dict()}, outpath_para + '/' + '{:05d}'.format(it) + args.paramw)
+                
+                #'''
                 tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
                                     tspan, dt, TS, args.evnt_align,A_matrix)
-
+                
                 # backward prop
                 func.backtrace.clear()
                 loss.backward()
-                print("iter: {:5d}, validation loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, loss.item()/len(TS), len(tsne), mete), flush=True)
+                print("iter: {:5d}, validation loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, 
+                                                        loss.item()/len(TS), len(tsne), mete), flush=True)
 
                 # visualize
                 tsave_ = torch.tensor([record[0] for record in reversed(func.backtrace)])
                 trace_ = torch.stack(tuple(record[1] for record in reversed(func.backtrace)))
-                visualize(outpath, tsave, trace, lmbda, tsave_, trace_, None, None, tsne, range(len(TS)), it)
-                '''
+                visualize(outpath_graph, tsave, trace, lmbda, tsave_, trace_, None, None, tsne, 
+                          range(len(TS)), it,appendix="validate")
+                #'''
+                
                 func.jump_type="simulate"
                 print("for simulate visual")
                 #print(len(func.evnts))
@@ -213,8 +219,8 @@ if __name__ == '__main__':
                 
                 #simu_evnts = func.evnts
                 #print(simu_evnts)
-                print(len(simu_evnts))
-                print(simu_evnts)
+                #print(len(simu_evnts))
+                #print(simu_evnts)
                 
                 evnts = [((evnt[0]),) + evnt[1:] for evnt in simu_evnts if tspan[0] < (evnt[0]) < tspan[1]]
                 
@@ -224,8 +230,8 @@ if __name__ == '__main__':
                 
                 tsave_s = np.sort(np.unique(np.concatenate((tgrid, tevnt))))
                 
-                print(len(tsave_s))
-                print(tsave_s)
+                #print(len(tsave_s))
+                #print(tsave_s)
                 
                 t2tid = {t: tid for tid, t in enumerate(tsave_s)}
 
@@ -233,11 +239,11 @@ if __name__ == '__main__':
                 
                 tse = [(t2tid[evnt[0]],) + evnt[1:] for evnt in evnts]
                 
-                print(len(tse))
-                print(tse)
+                #print(len(tse))
+                #print(tse)
                 tsave_s = torch.tensor(tsave_s)
                 
-                visualize('graph_result2', tsave, trace, lmbda, None, None, None, None,
+                visualize(outpath_graph, tsave, trace, lmbda, None, None, None, None,
                           tse, range(1), it, appendix="simulate",tsave_simu = tsave_s)
 
     # simulate events
@@ -245,4 +251,4 @@ if __name__ == '__main__':
     print("for simulate visual")
     tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
                                                                tspan, dt, [[]]*1, args.evnt_align,A_matrix)
-    visualize('graph_result2', tsave, trace, lmbda, None, None, None, None, tsne, range(1), it, appendix="simulate")
+    visualize(outpath_graph, tsave, trace, lmbda, None, None, None, None, tsne, range(1), it, appendix="simulate")

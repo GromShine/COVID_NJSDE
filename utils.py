@@ -185,14 +185,21 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     # 取出了事件类型总数dim_N的lambda
     lmbda = params[..., :func.dim_N]
     
-    print(tsave.size)
-    exit
+    # print(tsave.size())
+    # torch.Size([1815])
     
     if gs_info is not None:
         lmbda[:, :, :] = torch.tensor(gs_info[0])
 
     # 通过学到的lambda函数积分求出loglikehood后半部分
     def integrate(tt, ll):
+        print(ll.size())
+        print(ll[:-1, ...].size())
+        print(ll[1:, ...].size())
+        print('A',ll)
+        print('B',ll[:-1, ...])
+        print('C',ll[1:,...])
+        exit
         lm = (ll[:-1, ...] + ll[1:, ...]) / 2.0
         dts = (tt[1:] - tt[:-1]).reshape((-1,)+(1,)*(len(lm.shape)-1)).float()
         return (lm * dts).sum()

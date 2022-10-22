@@ -15,10 +15,8 @@ class OdeintAdjointMethod(torch.autograd.Function):
         ctx.func, ctx.rtol, ctx.atol, ctx.method, ctx.options = func, rtol, atol, method, options
         
         with torch.no_grad():
-            print('before odeint')
             ans = odeint(func, y0, t, rtol=rtol, atol=atol, method=method, options=options)
-            print('afteer odeint')
-            #跳转到odeint.py
+
         ctx.save_for_backward(t, flat_params, *ans)
         return ans
 
@@ -213,9 +211,7 @@ def odeint_adjoint(func, y0, t, rtol=1e-6, atol=1e-12, method=None, options=None
     #print(len(flat_params),">>>>")
     #588
     
-    print('before apply')
     ys = OdeintAdjointMethod.apply(*y0, func, t, flat_params, rtol, atol, method, options)
     if tensor_input:
         ys = ys[0]
-    print("after apply")
     return ys

@@ -30,7 +30,6 @@ class AdaptiveStepsizeODESolver(object):
         self.before_integrate(t)
         
         for i in range(1, len(t)):
-            print("before advance")
             y = self.advance(t[i])
             solution.append(y)
         

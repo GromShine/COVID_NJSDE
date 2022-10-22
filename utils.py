@@ -145,7 +145,7 @@ def create_tsave(tmin, tmax, dt, evnts_raw, evnt_align=False):
     # 发生事件对应的（时间排序位次,维度,事件类型）tuple
     tse = [(t2tid[evnt[0]],) + evnt[1:] for evnt in evnts]
 
-    # 返回全部时间+时间网格去重后的时间, 时间网格排序位置, 原输入时间维度类型元组, 发生事件的对应的（时间位置,维度,事件类型）元组
+    # 返回全部时间+时间网格去重后的时间, 时间网格排序位置, 原输入时间维度类型元组, 发生事件tuple(时间位置,维度,事件类型元组)
     return torch.tensor(tsave), gtid, evnts, tse
 
 def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None, type_forecast=[0.0], 
@@ -170,26 +170,24 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
 
     # func: ODEJumpFunc
     # z0: dim_N*(c0+h0) -> county_num * (n1+n2), 初始化所有维度的z0
-    # output: t_total * county_num * (c0+h0)
-    print('before')
+    # output trace: t_total * county_num * z_i = t_total * county_num * (c_i+h_i)
+    
     trace = odeint(func, z0.repeat(len(batch), 1), tsave, method='jump_adams', rtol=rtol, atol=atol)
-    print('after')
     # input: t_total*county_num*(n1+n2)
     # output: t_total*couty_num*dim_N,每个维度,每个时间节点上、每个事件类型的lambda
-    print(trace.size())
-    print(func.L)
-    exit
+    # torch.Size([1815, 12, 20])
     
+    # params Size([1815, 12, 12])
     params = func.L(trace)
-    print(params.size())
-    print(len(params[0]))
-   
+    
     # print(lmbda.size())
     # torch.Size([1815, 12, 12])
     # 取出了事件类型总数dim_N的lambda
     lmbda = params[..., :func.dim_N]
-    print(lmbda.size())
+    
+    print(tsave.size)
     exit
+    
     if gs_info is not None:
         lmbda[:, :, :] = torch.tensor(gs_info[0])
 
@@ -206,6 +204,7 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
 
     if func.evnt_embedding == "discrete":
         et_error = []
+        # 对每一个事件tuple(时间排序位次,维度,事件类型)
         for evnt in tse:
             log_likelihood += torch.log(lmbda[evnt])
             

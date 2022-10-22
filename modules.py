@@ -202,6 +202,7 @@ class ODEJumpFunc(nn.Module):
         self.G = nn.Sequential(MLP(dim_c, dim_h, dim_hidden, num_hidden, activation), nn.Softplus())
 
         # L is λ(z(t))
+        # c(t)+h(t)->λ(z(t))
         if evnt_embedding == "discrete":
             assert dim_E == dim_N, "if event embedding is discrete, then use one dimension for each event type"
             self.evnt_embed = lambda k: (torch.arange(0, dim_E) == k).float()

@@ -128,6 +128,13 @@ if __name__ == '__main__':
 
             # forward pass
             # z0: c0+h0
+            '''
+               utils.py——forward_pass——odeint_adjoint
+            -> adjoint.py——odeint_adjoint——OdeintAdjointMethod——odeint
+            -> odeint.py——solver.integrate
+            -> solvers.py——AdaptiveStepsizeODESolver——integrate——advance
+            -> adams.py——advance——VariableCoefficientAdamsBashforth——VariableCoefficientJumpAdamsBashforth——_adaptive_adams_step
+            '''
             tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
                         tspan, dt, batch, args.evnt_align, A_matrix, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             #tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 

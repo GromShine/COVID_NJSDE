@@ -104,7 +104,7 @@ def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, ts
                 plt.plot(tsave.numpy(), scale * mean, linewidth=1.0, linestyle="dotted", color="black")
         '''
 
-        plt.savefig(outpath + '/{:03d}_{:04d}_{}.png'.format(batch_id[sid], itr, appendix), dpi=360)
+        plt.savefig(outpath + '/{}_{:03d}_{:04d}.png'.format(appendix,batch_id[sid], itr), dpi=360)
         fig.clf()
         plt.close(fig)
 

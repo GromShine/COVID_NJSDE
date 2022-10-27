@@ -185,7 +185,11 @@ def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None,
     # output: t_total*couty_num*dim_N,每个时间节点,每个维度,每个事件类型的lambda
     # torch.Size([1815, 12, 20])
     
+    
+    #print("before_L")
+    #print(trace.size())
     # params Size([1815, 12, 12])
+    # torch.Size([2242, 1, 22])
     params = func.L(trace)
     
     # print(lmbda.size())

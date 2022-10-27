@@ -36,8 +36,10 @@ parser.add_argument('--seed0', dest='seed0', action='store_true')
 parser.add_argument('--debug', dest='debug', action='store_true')
 args = parser.parse_args()
 
-outpath_para = 'para_save'
-outpath_graph = 'graph_result3'
+outpath_para = 'para_save2'
+outpath_graph = 'graph_result4'
+
+loss_tot = []
 
 def read_event_time(scale=1.0, h_dt=0.0, t_dt=0.0):
     time_seqs = []
@@ -90,21 +92,21 @@ if __name__ == '__main__':
     # events up to time t, where n = n1 + n2.
     # dim_N,有多少种事件种类,这里最后的lambda函数,有多少事件种类就输出多少个lambda函数
     # dt, forward时间间隔
-    dim_c, dim_h, dim_N, dt = 10, 10, county_num, 0.05
+    dim_c, dim_h, dim_N, dt = county_num, county_num, county_num, 0.05
     
     #初始化A-matrix
     A_matrix = Variable(0.01*torch.ones((county_num, county_num)), requires_grad= True)
     
     # initialize / load model
     func = ODEJumpFunc(dim_c, dim_h, dim_N, dim_N, dim_hidden=32, num_hidden=2, ortho=True, 
-                       jump_type=args.jump_type, evnt_align=args.evnt_align, activation=nn.CELU())
+                       jump_type=args.jump_type, evnt_align=args.evnt_align, activation=nn.CELU(),A=A_matrix)
     c0 = torch.randn(dim_c, requires_grad=True)
     h0 = torch.zeros(dim_h)
     it0 = 0
     
     #对微分方程的参数和A_matrix进行优化
     optimizer = optim.Adam([{'params': func.parameters()},
-                            {'params':A_matrix},
+                            {'params':func.A_Matrix},
                             {'params': c0, 'lr': 1.0e-2},
                             ], lr=1e-3, weight_decay=1e-5)
 
@@ -125,8 +127,10 @@ if __name__ == '__main__':
         while it < args.niters:
             func.jump_type = "read"
             # clear out gradients for variables
+            #print(',<<<',c0.grad)
             optimizer.zero_grad()
-
+            #print(',,,',c0.grad)
+            
             # sample a mini-batch, create a grid based on that
             batch = TS
 
@@ -139,6 +143,16 @@ if __name__ == '__main__':
             -> solvers.py——AdaptiveStepsizeODESolver——integrate——advance
             -> adams.py——advance——VariableCoefficientAdamsBashforth——VariableCoefficientJumpAdamsBashforth——_adaptive_adams_step
             '''
+            
+            #print(func.W.state_dict().get('1.weight'))
+            
+            for i in func.W.state_dict().get('1.weight'):
+                for j in range(len(i)):
+                    if i[j]<0:
+                        i[j]=0.00001
+                
+            #print(func.W.state_dict().get('1.weight'))
+            
             tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
                         tspan, dt, batch, args.evnt_align, A_matrix, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             #tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
@@ -149,6 +163,13 @@ if __name__ == '__main__':
             # backward prop
             func.backtrace.clear()
             loss.backward()
+            
+            loss_tot.append(loss.item()/len(batch))
+            #print(type(loss))
+            #print(type(loss_tot))
+            torch.save(loss_tot,"loss_curve_iter_"+str(it)+".txt")
+            #exit
+            
             print("iter: {}, current loss: {:10.4f}, running ave loss: {:10.4f}, type error: {}".format(it, 
                                                                         loss.item()/len(batch), loss_meter.avg, mete), flush=True)
             
@@ -164,7 +185,16 @@ if __name__ == '__main__':
                 torch.save(A_matrix,"result.txt")
                 break
             '''
-            #print(A_matrix)
+            #print(func.W.state_dict().get('1.weight'))
+            
+            for i in func.W.state_dict().get('1.weight'):
+                for j in range(len(i)):
+                    if i[j]<0:
+                        i[j]=0.00001
+            
+            print(func.W.state_dict().get('1.weight'))
+            
+            
             #np.savetxt(r'result.txt',A_matrix.detach().numpy(), fmt='%f', delimiter=',')
             
             optimizer.step()
@@ -179,7 +209,7 @@ if __name__ == '__main__':
                 torch.save({'func_state_dict': func.state_dict(), 'c0': c0, 'h0': h0, 'it0': it, 
                             'optimizer_state_dict': optimizer.state_dict()}, outpath_para + '/' + '{:05d}'.format(it) + args.paramw)
                 
-                #'''
+                '''
                 tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
                                     tspan, dt, TS, args.evnt_align,A_matrix)
                 
@@ -189,12 +219,13 @@ if __name__ == '__main__':
                 print("iter: {:5d}, validation loss: {:10.4f}, num_evnts: {:8d}, type error: {}".format(it, 
                                                         loss.item()/len(TS), len(tsne), mete), flush=True)
 
+                
                 # visualize
                 tsave_ = torch.tensor([record[0] for record in reversed(func.backtrace)])
                 trace_ = torch.stack(tuple(record[1] for record in reversed(func.backtrace)))
                 visualize(outpath_graph, tsave, trace, lmbda, tsave_, trace_, None, None, tsne, 
                           range(len(TS)), it,appendix="validate")
-                #'''
+                #
                 
                 func.jump_type="simulate"
                 print("for simulate visual")
@@ -245,7 +276,7 @@ if __name__ == '__main__':
                 
                 visualize(outpath_graph, tsave, trace, lmbda, None, None, None, None,
                           tse, range(1), it, appendix="simulate",tsave_simu = tsave_s)
-
+                '''
     # simulate events
     func.jump_type="simulate"
     print("for simulate visual")

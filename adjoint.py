@@ -73,8 +73,12 @@ class OdeintAdjointMethod(torch.autograd.Function):
             def next_read_jump(self, t0, t1):
                 return func.next_read_jump(t0, t1)
 
+
             def read_jump(self, t, y_aug):
                 # Ignore adj_time and adj_params.
+                # y_aug size: bs, n_dim*2 + n_params + 1
+                # batch_size, z_i + ajoint_i + θ + t
+                
                 y, adj_y = y_aug[:n_tensors], y_aug[n_tensors:2 * n_tensors]
 
                 # JJ: replace y_aug with saved trace
@@ -86,14 +90,23 @@ class OdeintAdjointMethod(torch.autograd.Function):
                    y = tuple(y_.detach().requires_grad_(True) for y_ in y)
 
                    # JJ: if no jump, then set grad to true
+                   #print("before dy")
+                   #print(y[0])
+                   #print('>>>ygrad',y[0].grad)
                    dy = tuple(y_.requires_grad_(True) if (not y_.requires_grad) else y_ for y_ in self.func.read_jump(t, y))
+                   
+                   #print('<<',dy[0][0].grad)
 
+                   
                    vjp_t, *vjp_y_and_params = torch.autograd.grad(
                        dy, (t,) + y + f_params,
                        tuple(-adj_y_ for adj_y_ in adj_y),  allow_unused=True, # retain_graph=True
                    )
+                   
+                   
                 vjp_y = vjp_y_and_params[:n_tensors]
                 vjp_params = vjp_y_and_params[n_tensors:]
+                
 
                 # TODO: double check if gradient w.r.t. t is correct
                 vjp_t = torch.zeros_like(t) if vjp_t is None else vjp_t
@@ -210,6 +223,9 @@ def odeint_adjoint(func, y0, t, rtol=1e-6, atol=1e-12, method=None, options=None
     #print(len(flat_params),">>>>")
     #588
     
+    
+    # y0: z0
+    # t: tsave
     ys = OdeintAdjointMethod.apply(*y0, func, t, flat_params, rtol, atol, method, options)
     if tensor_input:
         ys = ys[0]

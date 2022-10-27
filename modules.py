@@ -176,7 +176,7 @@ class ODEJumpFunc(nn.Module):
 
     def __init__(self, dim_c, dim_h, dim_N, dim_E, dim_hidden=20, num_hidden=0, activation=nn.CELU(), ortho=False,
                  jump_type="read", evnts=[], evnt_align=False, evnt_embedding="discrete",
-                 graph=None, aggregation=None):
+                 graph=None, aggregation=None,A=None):
         super(ODEJumpFunc, self).__init__()
 
         self.dim_c = dim_c  # internal state
@@ -185,6 +185,10 @@ class ODEJumpFunc(nn.Module):
         self.dim_E = dim_E  # dimension for encoding of event itself
         self.ortho = ortho  # default false
         self.evnt_embedding = evnt_embedding
+        self.A_Matrix = A
+        self.A_embd = MLP(dim_N,dim_h,dim_hidden, num_hidden, activation)
+        #print(self.A_Matrix.requires_grad)
+
 
         assert jump_type in ["simulate", "read"], "invalide jump_type, must be one of [simulate, read]"
         self.jump_type = jump_type
@@ -217,8 +221,13 @@ class ODEJumpFunc(nn.Module):
             raise Exception('evnt_type must either be discrete or continuous')
             
         # W is jump function: dim_c + dim_E -> dim_h
-        self.W = MLP(dim_c+dim_E, dim_h, dim_hidden, num_hidden, activation)
-
+        #self.W = MLP(dim_c+dim_E, dim_h, dim_hidden, num_hidden, activation)
+        self.W = nn.Sequential(MLP(dim_c+dim_E, dim_h, dim_hidden, num_hidden, activation),nn.Linear(dim_h, dim_h,bias=False),nn.ReLU())
+        #print(self.W)
+        #print(self.W.state_dict().get('1.weight'))
+        #for param in self.W.parameters():
+        #    print(param.size())
+        
         self.backtrace = []
 
     def forward(self, t, z):
@@ -245,19 +254,18 @@ class ODEJumpFunc(nn.Module):
             
             # next arrival time
             tt = t0 + m.sample()
-           # print(len(tt))
-           # print(tt)
             tt_min = tt.min()
 
+            # 有事件发生则 dN=1,没有则为0            
             if tt_min <= t1:
                 dN = (tt == tt_min).float()
+                #print(dN)
             else:
                 dN = torch.zeros(tt.shape)
             
-           # print(len(dN))
-           # print(dN)
-           # exit
+            
             next_t = min(tt_min, t1)
+            
         else:
             assert t0 < t1
 
@@ -297,8 +305,12 @@ class ODEJumpFunc(nn.Module):
                     kv = self.evnt_embed(torch.randn(gsmean_k.shape) * torch.exp(0.5*logvar_k) + gsmean)
                     sequence.extend([(t,) + loc + (kv,)])
 
-                # add to jump
-                dz[loc][self.dim_c:] += self.W(torch.cat((c[loc], kv), dim=-1))
+                # add jump to dim_h
+                # W is jump function: dim_c + dim_E -> dim_h
+                # adding A_influence
+                dz[loc][self.dim_c:] +=  self.W(torch.cat((c[loc], kv), dim=-1))
+                #dz[loc][self.dim_c:] += self.W(torch.cat((c[loc], kv), dim=-1))*self.A_embd(self.A_Matrix)
+                #dz[loc][self.dim_c:] +=  torch.mm(self.W(torch.cat((c[loc], kv), dim=-1)).unsqueeze(0),(self.A_Matrix)).squeeze(0)
 
         self.evnts.extend(sequence)
 
@@ -324,14 +336,16 @@ class ODEJumpFunc(nn.Module):
         return t
 
     def read_jump(self, t, z):
-        
+        #print("after dy")
         assert self.jump_type == "read", "read_jump must be called with jump_type = read"
         dz = torch.zeros(z.shape)
-
+        #dz.requires_grad=True
+        
+        
         inf = sys.maxsize
         lid = bisect.bisect_left(self.evnts, (t, -inf, -inf, -inf))
         rid = bisect.bisect_right(self.evnts, (t, inf, inf, inf))
-
+        
         c = z[..., :self.dim_c]
         for evnt in self.evnts[lid:rid]:
             # find location and type of event
@@ -339,8 +353,22 @@ class ODEJumpFunc(nn.Module):
 
             # encode of event k
             kv = self.evnt_embed(k)
-
-            # add to jump
-            dz[loc][self.dim_c:] += self.W(torch.cat((c[loc], kv), dim=-1))
-
+            #print(kv)
+            #print(kv.size())
+            #print(kv.unsqueeze(0))
+            #print(kv.unsqueeze(0).size())
+            #kv = torch.mm(kv.unsqueeze(0),self.A_Matrix).squeeze(0)
+            #print(kv)
+            #print(kv.size())
+            #print(kv.squeeze(0))
+            #print(kv.squeeze(0).size())
+            
+            
+            # dz: dim_c + dim_h
+            # add jump to dim_h
+            # W is jump function: dim_c + dim_E -> dim_h
+            # adding A_influence
+            dz[loc][self.dim_c:] +=  self.W(torch.cat((c[loc], kv), dim=-1))
+            #dz[loc][self.dim_c:] = dz[loc][self.dim_c:] + torch.mm(self.W(torch.cat((c[loc], kv), dim=-1)).unsqueeze(0),(self.A_Matrix)).squeeze(0)
+            
         return dz

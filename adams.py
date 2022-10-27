@@ -190,16 +190,19 @@ class VariableCoefficientJumpAdamsBashforth(VariableCoefficientAdamsBashforth):
         # during forward pass, jump then step
         if self.func.jump_type == "read":
             dy = self.func.read_jump(t0, y0)
+            
             if dy[0].abs().sum() != 0:
                 y0 = tuple(y0_+dy_ for y0_, dy_ in zip(y0, dy))
                 order0 = 1
-            vcabm_state = vcabm_state._replace(y_n=y0, next_t=self.func.next_read_jump(vcabm_state.prev_t[0], vcabm_state.next_t), order=order0) # perform the jump & change step size
+            vcabm_state = vcabm_state._replace(y_n=y0, next_t =
+                        self.func.next_read_jump(vcabm_state.prev_t[0], vcabm_state.next_t), order=order0) # perform the jump & change step size
         elif self.func.jump_type == "simulate":
             dN, next_t = self.func.next_simulated_jump(vcabm_state.prev_t[0], y0, vcabm_state.next_t)
             vcabm_state = vcabm_state._replace(next_t=next_t) # perform the jump & change step size
 
         # perform the step
-        y1, prev_f, prev_t, next_t, prev_phi, order = super(VariableCoefficientJumpAdamsBashforth, self)._adaptive_adams_step(vcabm_state, final_t)
+        y1, prev_f, prev_t, next_t, prev_phi, order = super(VariableCoefficientJumpAdamsBashforth, 
+                                                            self)._adaptive_adams_step(vcabm_state, final_t)
 
         if prev_t[0] == next_t:
             print("STEPSIZE WARNING: {}, {}, {}, {}".format(t0, prev_t[0], next_t, final_t))

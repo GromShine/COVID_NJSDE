@@ -44,7 +44,8 @@ def create_outpath(dataset):
     return outpath
 
 
-def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, batch_id, itr, tsave_simu = None,gsmean=None, gsvar=None, scale=1.0, appendix=""):
+def visualize(outpath, tsave, trace, lmbda, tsave_, trace_, grid, lmbda_real, tse, batch_id, itr, 
+              tsave_simu = None,gsmean=None, gsvar=None, scale=1.0, appendix=""):
     # torch.Size([1815, 12, 12])
     for sid in range(lmbda.shape[1]):
         fig = plt.figure(figsize=(20, 10), facecolor='white')
@@ -155,7 +156,7 @@ def create_tsave(tmin, tmax, dt, evnts_raw, evnt_align=False):
     # 返回全部时间+时间网格去重后的时间, 时间网格排序位置, 原输入时间维度类型元组, 发生事件tuple(时间位置,维度,事件类型元组)
     return torch.tensor(tsave), gtid, evnts, tse
 
-def forward_pass(func, z0, tspan, dt, batch, evnt_align, A_matrix, gs_info=None, type_forecast=[0.0], 
+def forward_pass(func, z0, tspan, dt, batch, evnt_align, gs_info=None, type_forecast=[0.0], 
                  predict_first=True, rtol=1.0e-5, atol=1.0e-7, scale=1.0):
 #def forward_pass(func, z0, tspan, dt, batch, evnt_align, gs_info=None, type_forecast=[0.0], predict_first=True, rtol=1.0e-5, atol=1.0e-7, scale=1.0):
     

@@ -172,11 +172,11 @@ class ODEFunc(nn.Module):
 
 
 # This function need to be stateless
-class ODEJumpFunc(nn.Module):
+class   ODEJumpFunc(nn.Module):
 
     def __init__(self, dim_c, dim_h, dim_N, dim_E, dim_hidden=20, num_hidden=0, activation=nn.CELU(), ortho=False,
                  jump_type="read", evnts=[], evnt_align=False, evnt_embedding="discrete",
-                 graph=None, aggregation=None,A=None):
+                 graph=None, aggregation=None):
         super(ODEJumpFunc, self).__init__()
 
         self.dim_c = dim_c  # internal state
@@ -185,7 +185,6 @@ class ODEJumpFunc(nn.Module):
         self.dim_E = dim_E  # dimension for encoding of event itself
         self.ortho = ortho  # default false
         self.evnt_embedding = evnt_embedding
-        self.A_Matrix = A
         self.A_embd = MLP(dim_N,dim_h,dim_hidden, num_hidden, activation)
         #print(self.A_Matrix.requires_grad)
 

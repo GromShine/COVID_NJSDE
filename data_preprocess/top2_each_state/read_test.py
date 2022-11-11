@@ -20,15 +20,17 @@ datanames = os.listdir(path)
 for i in range(len(datanames)):
     a_file = open(path+'/'+datanames[i], "rb")
     data = pickle.load(a_file)
+    print(data)    
+    print(len(data))
+    exit
+    # mx = 0
+    # mn = 1000
+    # print('len:',len(data))
+    # for i in data:
+    #     print(len(data[i]))
+    #     if len(data[i])>mx:
+    #         mx = len(data[i])
+    #     if len(data[i])<mn:
+    #         mn = len(data[i])
     
-    mx = 0
-    mn = 1000
-    print('len:',len(data))
-    for i in data:
-        print(len(data[i]))
-        if len(data[i])>mx:
-            mx = len(data[i])
-        if len(data[i])<mn:
-            mn = len(data[i])
-    
-    print('MAX:',mx,'MIN:',mn)
+    # print('MAX:',mx,'MIN:',mn)

@@ -8,6 +8,8 @@ import matplotlib
 import copy
 import torch
 import torch.nn as nn
+import pickle
+import os
 import torch.optim as optim
 from torch.autograd import Variable
 from modules import RunningAverageMeter, ODEJumpFunc
@@ -25,7 +27,18 @@ parser.add_argument('--paramw', type=str, default='params.pth')
 parser.add_argument('--batch_size', type=int, default=1)
 parser.add_argument('--nsave', type=int, default=1)
 parser.add_argument('--fold', type=int, default=0)
-parser.add_argument('--dataset', type=str, default='n1')
+
+#parser.add_argument('--dataset', type=str, default='n1')
+#parser.add_argument('--dataset', type=str, default='new_n2')
+#parser.add_argument('--dataset', type=str, default='LA_1x4_TTS')
+#parser.add_argument('--dataset', type=str, default='California_Riverside_06065_2021-06-28_2021-12-28_15')
+parser.add_argument('--dataset', type=str, default='California_Fresno_06019_2021-06-28_2021-12-28_12')
+#parser.add_argument('--dataset', type=str, default='California_Riverside_06065_2021-06-28_2021-12-28_15')
+#parser.add_argument('--dataset', type=str, default='California_Riverside_06065_2021-06-28_2021-12-28_15')
+#parser.add_argument('--dataset', type=str, default='California_Riverside_06065_2021-06-28_2021-12-28_15')
+#parser.add_argument('--dataset', type=str, default='California_Riverside_06065_2021-06-28_2021-12-28_15')
+
+
 # small example data use 'm1' : Massachusetts from 20200928 to 20201228
 # big example data use 'c1': california from 20200928 to 20201228
 
@@ -40,6 +53,43 @@ outpath_para = 'para_save2'
 outpath_graph = 'graph_result4'
 
 loss_tot = []
+
+def read_event_time2(scale=1.0, h_dt=0.0, t_dt=0.0):
+    a_file = open('./data/'+args.dataset+'.pkl', "rb")
+    data = pickle.load(a_file)
+    
+    time_seqs = []
+    time_mark = {}
+    tmp_time_seq = []
+    for i in data.keys():           #遍历所有维度
+        for j in data[i]:           #对于每个维度下的每个时间点
+            tmp_time_seq.append(j)  #由于时间点已经处理过，不存在相同时间点
+            time_mark[j] = i        #记录时间点j的所属维度i
+    sort_tmp_time_seq = sorted(tmp_time_seq)    #从小到大排序时间点
+    
+    time_seqs.append(sort_tmp_time_seq)  
+    
+    tmin = min([min(seq) for seq in time_seqs]) #找出最小时间点
+    tmax = max([max(seq) for seq in time_seqs]) #找出最大时间点
+    
+    mark_seqs=[]
+    tmp_mark_seqs=[]
+    
+    for i in sort_tmp_time_seq:
+        tmp_mark_seqs.append(time_mark[i])      #向标记序列中依次加入当前时间点的所属维度
+    
+    mark_seqs.append(tmp_mark_seqs)
+
+    # marks to mark_id
+    m2mid = {m: mid for mid, m in enumerate(np.unique(sum(mark_seqs, [])))}
+
+    # [[(t1_1,mk1_1),(t2_1,mk2_1)],[(t1_2,mk1_2),(t2_2,mk2_2)],[]]
+    # 时间归一化，最小时间从h_dt=1.0开始
+    evnt_seqs = [[((h_dt+time-tmin)*scale, m2mid[mark]) for time, mark in zip(time_seq, mark_seq)] for time_seq, mark_seq in zip(time_seqs, mark_seqs)]
+    
+    return evnt_seqs, (0.0, ((tmax+t_dt)-(tmin-h_dt))*scale), len(data)
+
+
 
 def read_event_time(scale=1.0, h_dt=0.0, t_dt=0.0):
     time_seqs = []
@@ -56,15 +106,17 @@ def read_event_time(scale=1.0, h_dt=0.0, t_dt=0.0):
         seqs = fmark.readlines()
         for seq in seqs:
             mark_seqs.append([int(k) for k in seq.split()])
-
+        
     # marks to mark_id
     m2mid = {m: mid for mid, m in enumerate(np.unique(sum(mark_seqs, [])))}
+    
+    
 
     # [[(t1_1,mk1_1),(t2_1,mk2_1)],[(t1_2,mk1_2),(t2_2,mk2_2)],[]]
     # 时间归一化，最小时间从h_dt=1.0开始
     evnt_seqs = [[((h_dt+time-tmin)*scale, m2mid[mark]) for time, mark in zip(time_seq, mark_seq)] for time_seq, mark_seq in zip(time_seqs, mark_seqs)]
     
-    return evnt_seqs, (0.0, ((tmax+t_dt)-(tmin-h_dt))*scale)
+    return evnt_seqs, (0.0, ((tmax+t_dt)-(tmin-h_dt))*scale),len(np.unique(mark_seqs))
 
 
 if __name__ == '__main__':
@@ -77,15 +129,21 @@ if __name__ == '__main__':
         np.random.seed(0)
         torch.manual_seed(0)
 
-    
+    # 维度 county_num
     
     # TimeSequences, 全部事件(时间,事件类型)元组
     # tspn, 时间范围, (min_t, max_t)
-    TS, tspan = read_event_time(1.0, 1.0, 1.0)
+    # print(read_event_time(1.0, 1.0, 1.0))
+    #TS, tspan,county_num = read_event_time(1.0, 1.0, 1.0)
+    TS, tspan,county_num = read_event_time2(1.0, 1.0, 1.0)
     
-    # 维度
-    #county_num = len(TS)
-    county_num = 12
+    tot_pts = 0
+    for i in range(len(TS)):
+        tot_pts += len(TS[i])
+    
+    print(TS,county_num,tot_pts)
+    #exit
+    
     
     # dim_c,dim_h: In order to better simulate the time series, the latent state z(t)∈ R^n is further split into 
     # two vectors: c(t)∈ R^n1 encodes the internal state, and h(t)∈ R^n2 encodes the memory of 
@@ -94,19 +152,16 @@ if __name__ == '__main__':
     # dt, forward时间间隔
     dim_c, dim_h, dim_N, dt = county_num, county_num, county_num, 0.05
     
-    #初始化A-matrix
-    A_matrix = Variable(0.01*torch.ones((county_num, county_num)), requires_grad= True)
     
     # initialize / load model
     func = ODEJumpFunc(dim_c, dim_h, dim_N, dim_N, dim_hidden=32, num_hidden=2, ortho=True, 
-                       jump_type=args.jump_type, evnt_align=args.evnt_align, activation=nn.CELU(),A=A_matrix)
+                       jump_type=args.jump_type, evnt_align=args.evnt_align, activation=nn.CELU())
     c0 = torch.randn(dim_c, requires_grad=True)
     h0 = torch.zeros(dim_h)
     it0 = 0
     
     #对微分方程的参数和A_matrix进行优化
     optimizer = optim.Adam([{'params': func.parameters()},
-                            {'params':func.A_Matrix},
                             {'params': c0, 'lr': 1.0e-2},
                             ], lr=1e-3, weight_decay=1e-5)
 
@@ -133,7 +188,7 @@ if __name__ == '__main__':
             
             # sample a mini-batch, create a grid based on that
             batch = TS
-
+            
             # forward pass
             # z0: c0+h0
             '''
@@ -154,7 +209,7 @@ if __name__ == '__main__':
             #print(func.W.state_dict().get('1.weight'))
             
             tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
-                        tspan, dt, batch, args.evnt_align, A_matrix, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
+                        tspan, dt, batch, args.evnt_align, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             #tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
             #                            tspan, dt, batch, args.evnt_align, predict_first=False, rtol=1.0e-7, atol=1.0e-9)
             
@@ -173,18 +228,7 @@ if __name__ == '__main__':
             print("iter: {}, current loss: {:10.4f}, running ave loss: {:10.4f}, type error: {}".format(it, 
                                                                         loss.item()/len(batch), loss_meter.avg, mete), flush=True)
             
-            '''
-            if torch.norm(A_matrix.grad)<1e-4:
-                #终止条件
-                for Ai in range(county_num):
-                    for Aj in range(county_num):
-                        with torch.no_grad():
-                            if A_matrix[Ai,Aj]<=0:
-                                A_matrix[Ai,Aj]=relu(A_matrix[Ai,Aj])+0.0001
-                # 可以只在最后一步做此输出
-                torch.save(A_matrix,"result.txt")
-                break
-            '''
+            
             #print(func.W.state_dict().get('1.weight'))
             
             for i in func.W.state_dict().get('1.weight'):
@@ -192,10 +236,14 @@ if __name__ == '__main__':
                     if i[j]<0:
                         i[j]=0.00001
             
-            print(func.W.state_dict().get('1.weight'))
+            tmp_sav = func.W.state_dict().get('1.weight')
+            print(tmp_sav)
             
+            if not os.path.exists('./Output_A/'+args.dataset):
+                os.mkdir('./Output_A/'+args.dataset)
             
-            #np.savetxt(r'result.txt',A_matrix.detach().numpy(), fmt='%f', delimiter=',')
+            #torch.save(torch.tensor(tmp_sav),'./Output_A/'+args.dataset+'/result_'+str(it)+'.npy')
+            np.savetxt('./Output_A/'+args.dataset+'/result_'+str(it)+'.txt',tmp_sav, fmt='%f', delimiter=',')
             
             optimizer.step()
 
@@ -209,9 +257,9 @@ if __name__ == '__main__':
                 torch.save({'func_state_dict': func.state_dict(), 'c0': c0, 'h0': h0, 'it0': it, 
                             'optimizer_state_dict': optimizer.state_dict()}, outpath_para + '/' + '{:05d}'.format(it) + args.paramw)
                 
-                '''
+                #'''
                 tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
-                                    tspan, dt, TS, args.evnt_align,A_matrix)
+                                    tspan, dt, TS, args.evnt_align)
                 
                 # backward prop
                 func.backtrace.clear()
@@ -233,7 +281,7 @@ if __name__ == '__main__':
                 #print(type(func.evnts[0]))
                 #print(func.evnts)
                 tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, 
-                             torch.cat((c0, h0), dim=-1), tspan, dt, [[]]*1, args.evnt_align,A_matrix)
+                             torch.cat((c0, h0), dim=-1), tspan, dt, [[]]*1, args.evnt_align)
                 
                 #print(type(tsave))
                 
@@ -276,10 +324,10 @@ if __name__ == '__main__':
                 
                 visualize(outpath_graph, tsave, trace, lmbda, None, None, None, None,
                           tse, range(1), it, appendix="simulate",tsave_simu = tsave_s)
-                '''
+                #'''
     # simulate events
     func.jump_type="simulate"
     print("for simulate visual")
     tsave, trace, lmbda, gtid, tsne, loss, mete = forward_pass(func, torch.cat((c0, h0), dim=-1), 
-                                                               tspan, dt, [[]]*1, args.evnt_align,A_matrix)
+                                                               tspan, dt, [[]]*1, args.evnt_align)
     visualize(outpath_graph, tsave, trace, lmbda, None, None, None, None, tsne, range(1), it, appendix="simulate")

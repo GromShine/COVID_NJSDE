@@ -64,7 +64,8 @@ class LSTM_policy(nn.Module):
         #print('self_actcnt',self.act_count)
         dynamic_mask=np.zeros(self.action_dim)
         #print(len(dynamic_mask))
-        tar = 0
+        tar = 0                                 #这里设的target是关闭，如果反过来设1，则相当于所有的mask都反过来
+                                                #比如连续开放多少天之后要关闭等等
         #print(len(cur_action[0]))
         self.open_county_num = 0 
         for i in range(len(cur_action[0])):     #遍历长度为n*n的action串，这里取[0]是因为action[[act1,act2,...]]
@@ -74,9 +75,9 @@ class LSTM_policy(nn.Module):
             else:                                               #如果现在策略是关闭
                 if self.last_action[i] == cur_action[0][i]:     #如果现在策略和上次一样是关闭
                     self.act_count[i] = self.act_count[i] + 1   #更新连续关闭策略的计数器
-                    if(self.act_count[i] >= self.k1):
-                        dynamic_mask[i] = 1 - tar
-                        self.act_count[i] = 0
+                    if(self.act_count[i] >= self.k1):           #如果连续关闭次数超过界限
+                        dynamic_mask[i] = 1 - tar               #强制设下次为开放（与target相反）
+                        self.act_count[i] = 0                   #
                 else:
                     self.act_count[i]=0
                     

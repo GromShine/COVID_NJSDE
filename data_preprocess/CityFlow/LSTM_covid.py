@@ -102,7 +102,7 @@ class LSTM_policy(nn.Module):
         
         tar = 0
         for i in range(self.seq_len):       #seq_len, 决策次数
-            self.open_county_num = 0
+            self.open_county_num = 0        #未实装这个mask,因此这里设的0
             
             pi = self.sigmoid(self.temperature * self.V(hx)) # nonlinear mapping to a real value in between 0-1
             if self.open_county_num>self.k3:                 # 如果地图里80%的county都open了
@@ -113,7 +113,7 @@ class LSTM_policy(nn.Module):
             #print('prob', pi)
             #print('type_pi',type(pi))
             
-            action = torch.bernoulli(pi)
+            action = torch.bernoulli(pi)                    #从n*n长度的概率里sample出n*n长度的0,1决策串
             
             
             dynamic_mask = self.compute_dynamic_mask(action)

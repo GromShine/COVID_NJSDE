@@ -82,8 +82,8 @@ class LSTM_policy(nn.Module):
                     self.act_count[i]=0                         #这里置0，举例k1=2，当连续第三次关闭的时候
                                                                 #此时act_count[i]=2，达到界限，将此时mask置为1
                     
-            if cur_action[0][i] == tar:
-                self.lock_time[i] = self.lock_time[i] + 1
+            if cur_action[0][i] == tar:                         #如果现在决策是关闭
+                self.lock_time[i] = self.lock_time[i] + 1       #封锁时间+1
                 if self.lock_time[i] > self.k2:
                     dynamic_mask[i] = 1 - tar
                     

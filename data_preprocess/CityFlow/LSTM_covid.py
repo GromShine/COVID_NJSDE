@@ -66,14 +66,14 @@ class LSTM_policy(nn.Module):
         #print(len(dynamic_mask))
         tar = 0
         #print(len(cur_action[0]))
-        
-        for i in range(len(cur_action[0])):
-            if cur_action[0][i] != tar:
-                self.act_count[i]=0
-                self.open_county_num = self.open_county_num + 1
-            else:                
-                if self.last_action[i] == cur_action[0][i]:
-                    self.act_count[i] = self.act_count[i] + 1
+        self.open_county_num = 0 
+        for i in range(len(cur_action[0])):     #遍历长度为n*n的action串，这里取[0]是因为action[[act1,act2,...]]
+            if cur_action[0][i] != tar:         #如果现在决策是开放
+                self.act_count[i]=0             #那么重置连续关闭策略的计数器
+                self.open_county_num = self.open_county_num + 1 #更新现在open策略的county数
+            else:                                               #如果现在策略是关闭
+                if self.last_action[i] == cur_action[0][i]:     #如果现在策略和上次一样是关闭
+                    self.act_count[i] = self.act_count[i] + 1   #更新连续关闭策略的计数器
                     if(self.act_count[i] >= self.k1):
                         dynamic_mask[i] = 1 - tar
                         self.act_count[i] = 0
@@ -101,8 +101,10 @@ class LSTM_policy(nn.Module):
         #print(self.seq_len)
         
         tar = 0
+        #self.open_county_num = 0        #实装该mask的话，需在这里初始化0
+        
         for i in range(self.seq_len):       #seq_len, 决策次数
-            self.open_county_num = 0        #未实装这个mask,因此这里设的0
+            self.open_county_num = 0        #未实装这个mask,因此在这里设0
             
             pi = self.sigmoid(self.temperature * self.V(hx)) # nonlinear mapping to a real value in between 0-1
             if self.open_county_num>self.k3:                 # 如果地图里80%的county都open了
@@ -114,7 +116,6 @@ class LSTM_policy(nn.Module):
             #print('type_pi',type(pi))
             
             action = torch.bernoulli(pi)                    #从n*n长度的概率里sample出n*n长度的0,1决策串
-            
             
             dynamic_mask = self.compute_dynamic_mask(action)
             

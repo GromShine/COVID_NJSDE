@@ -30,7 +30,7 @@ class LSTM_policy(nn.Module):
         #k2: cumulative lock down
         self.k1 = 2 # successive
         self.k2 = 6 # cumulative
-        self.k3 = self.action_dim * 0.8 # 80% open within state
+        self.k3 = self.action_dim * 0.8 # 80% open within the map
         self.k4 = 5 # historical open 5 times, but when to stop
         
         #pre set 
@@ -101,14 +101,14 @@ class LSTM_policy(nn.Module):
         #print(self.seq_len)
         
         tar = 0
-        for i in range(self.seq_len):
+        for i in range(self.seq_len):       #seq_len, 决策次数
             self.open_county_num = 0
             
             pi = self.sigmoid(self.temperature * self.V(hx)) # nonlinear mapping to a real value in between 0-1
-            if self.open_county_num>self.k3:
-                for mi in range(self.action_dim):
-                    if self.last_action[mi] == tar:
-                        pi[mi] = pi[mi] + (1-pi[mi])*0.5
+            if self.open_county_num>self.k3:                 # 如果地图里80%的county都open了
+                for mi in range(self.action_dim):            
+                    if self.last_action[mi] == tar:          # 而现在这个county上一次是关闭的
+                        pi[mi] = pi[mi] + (1-pi[mi])*0.5     #增加他这次open的概率,但不能增加超过1,这里设的是增加到当前概率和1的中间点
                         
             #print('prob', pi)
             #print('type_pi',type(pi))

@@ -220,17 +220,8 @@ class trajectory_optimizer():
 
     def __init__(self, lr=0.001, iter_pg=10000, batch_pg=16):
 
-        
-        
         #lreprobility``
         #np.random.seed(1)
-        
-        ## generate
-        # self.A_matrix = 0.1*np.random.random((self.num_dimension, self.num_dimension))
-        
-        
-        #self.A_matrix = torch.load("result4_02.txt")    
-        #self.A_matrix = self.A_matrix.detach().numpy()
         
         self.A_matrix = np.loadtxt('result_0.txt',delimiter=',')
         
@@ -241,9 +232,8 @@ class trajectory_optimizer():
         #print((self.A_matrix).shape[0])
         #print((self.A_matrix).shape[1])
         
-        
-        
         '''
+        # 人口数据补齐cost_matrix
         population=[213505,125927,563301,787038,70529,466647,161361,1605899,703740,518597,801162,826655]
      
         self.Cost_matrix = np.random.random((len(population),len(population)))
@@ -255,9 +245,12 @@ class trajectory_optimizer():
                     self.Cost_matrix[i][j]=population[i]
         self.Cost_matrix=self.Cost_matrix/200000
         '''
+        #归一化,控制cost大小(影响学习结果)
         #Max_Cost = np.max(self.Cost_matrix)
         #Min_Cost = np.min(self.Cost_matrix)
         #self.Cost_matrix=(10*self.Cost_matrix-Min_Cost)/(Max_Cost-Min_Cost)   
+        
+        #无给定cost_matrix的情况下，随机初始化cost_matrix或全置1
         #self.Cost_matrix = np.random.randint(0, 10, (self.num_dimension, self.num_dimension))
         self.Cost_matrix = np.ones((self.num_dimension, self.num_dimension))
         #print(self.Cost_matrix)

@@ -90,9 +90,9 @@ class LSTM_policy(nn.Module):
         
     def generate_action(self):
         
-        self.act_count = np.zeros(self.action_dim)
-        self.last_action = np.ones(self.action_dim) * 2
-        self.lock_time = np.zeros(self.action_dim)
+        self.act_count = np.zeros(self.action_dim)          
+        self.last_action = np.ones(self.action_dim) * 2     #初始化
+        self.lock_time = np.zeros(self.action_dim)          #每个[i,j]通道封锁的时间/次数
         
         action_seq = []
         action_prob_seq = []
@@ -263,14 +263,16 @@ class trajectory_optimizer():
         #print(self.Cost_matrix)
         #print(self.ini_intensity)
         
+        '''
         plot1 = plt.figure(1)
         plt.imshow(self.A_matrix, cmap='hot', interpolation='nearest', vmin=0, vmax=5)
         plot2 = plt.figure(2)
         plt.imshow(self.Cost_matrix, cmap='hot', interpolation='nearest',vmin=0, vmax=10)
         plt.show()
-
-        self.cur_decision_time = 1
-        self.num_stages = 12
+        '''
+        
+        self.cur_decision_time = 1      #目前在第几次决策
+        self.num_stages = 12            #总决策次数
 
         self.LSTM_policy = LSTM_policy(seq_len=self.num_stages, action_dim=np.square(self.num_dimension),A_matrix=self.A_matrix)
         self.compute_objective = compute_objective(num_dimension=self.num_dimension, beta=1, cost_Matrix=self.Cost_matrix,  decision_interval=1, grid=0.05, A_matrix=self.A_matrix)
@@ -278,14 +280,16 @@ class trajectory_optimizer():
         self.iter_pg = iter_pg
         self.batch_pg = batch_pg
 
-        #
-        seq_cnt = 0
+        #seq_cnt = 0
         optimizer = torch.optim.Adam(self.LSTM_policy.parameters(), lr=self.lr)
         for iter in range(self.iter_pg):
+            
+            #n*n长度的实际决策序列，n*n长度的决策概率
             action_seq, action_prob_seq = self.LSTM_policy.generate_action()
             cost = self.compute_objective.cost(self.ini_intensity, action_prob_seq, self.cur_decision_time)
             loss = torch.sum(torch.stack(cost))
             optimizer.zero_grad()
+            '''
             if seq_cnt==0:
                 tmp_sq = action_prob_seq[0]
                 last_sq = action_prob_seq[0]
@@ -296,6 +300,7 @@ class trajectory_optimizer():
                 last_sq = action_prob_seq[0]
                 #print("act_seq",tmp_sq)
             seq_cnt = seq_cnt+1
+            '''
             
             #torch.autograd.set_detect_anomaly(True)            
             #with torch.autograd.detect_anomaly():
@@ -305,8 +310,8 @@ class trajectory_optimizer():
             
             if iter % 10 == 0:
                 print('current cost is', loss)
-                print("act_seq",tmp_sq)
-                print(action_seq[0])
+                #print("act_seq",tmp_sq)
+                #print(action_seq[0])
                 fig, ax = plt.subplots(4,3,figsize=(9,12))
                 for tmp_i in range(4):
                     for tmp_j in range(3):

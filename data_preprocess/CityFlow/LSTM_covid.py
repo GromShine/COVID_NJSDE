@@ -75,11 +75,12 @@ class LSTM_policy(nn.Module):
             else:                                               #如果现在策略是关闭
                 if self.last_action[i] == cur_action[0][i]:     #如果现在策略和上次一样是关闭
                     self.act_count[i] = self.act_count[i] + 1   #更新连续关闭策略的计数器
-                    if(self.act_count[i] >= self.k1):           #如果连续关闭次数超过界限
+                    if(self.act_count[i] >= self.k1):           #如果连续关闭次数到达界限
                         dynamic_mask[i] = 1 - tar               #强制设下次为开放（与target相反）
                         self.act_count[i] = 0                   #并且重置连续关闭策略的计数器
                 else:
-                    self.act_count[i]=0
+                    self.act_count[i]=0                         #这里置0，举例k1=2，当连续第三次关闭的时候
+                                                                #此时act_count[i]=2，达到界限，将此时mask置为1
                     
             if cur_action[0][i] == tar:
                 self.lock_time[i] = self.lock_time[i] + 1

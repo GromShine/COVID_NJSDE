@@ -77,7 +77,7 @@ class LSTM_policy(nn.Module):
                     self.act_count[i] = self.act_count[i] + 1   #更新连续关闭策略的计数器
                     if(self.act_count[i] >= self.k1):           #如果连续关闭次数超过界限
                         dynamic_mask[i] = 1 - tar               #强制设下次为开放（与target相反）
-                        self.act_count[i] = 0                   #
+                        self.act_count[i] = 0                   #并且重置连续关闭策略的计数器
                 else:
                     self.act_count[i]=0
                     

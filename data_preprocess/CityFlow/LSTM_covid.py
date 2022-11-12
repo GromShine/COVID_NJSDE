@@ -75,19 +75,19 @@ class LSTM_policy(nn.Module):
             else:                                               #如果现在策略是关闭
                 if self.last_action[i] == cur_action[0][i]:     #如果现在策略和上次一样是关闭
                     self.act_count[i] = self.act_count[i] + 1   #更新连续关闭策略的计数器
-                    if(self.act_count[i] >= self.k1):           #如果连续关闭次数到达界限
-                        dynamic_mask[i] = 1 - tar               #强制设下次为开放（与target相反）
+                    if(self.act_count[i] >= self.k1):           #如果连续关闭次数到达界限k1
+                        dynamic_mask[i] = 1 - tar               #mask强制设1，下次为开放（与target相反）
                         self.act_count[i] = 0                   #并且重置连续关闭策略的计数器
                 else:
                     self.act_count[i]=0                         #这里置0，举例k1=2，当连续第三次关闭的时候
                                                                 #此时act_count[i]=2，达到界限，将此时mask置为1
                     
             if cur_action[0][i] == tar:                         #如果现在决策是关闭
-                self.lock_time[i] = self.lock_time[i] + 1       #封锁时间+1
-                if self.lock_time[i] > self.k2:
-                    dynamic_mask[i] = 1 - tar
+                self.lock_time[i] = self.lock_time[i] + 1       #累计封锁时间+1
+                if self.lock_time[i] > self.k2:                 #如果封锁时间超过了k2
+                    dynamic_mask[i] = 1 - tar                   #mask强制设1，开放
                     
-        self.last_action = cur_action[0]
+        self.last_action = cur_action[0]                        #更新last_action为当前action
         return dynamic_mask
         
     def generate_action(self):
@@ -119,14 +119,14 @@ class LSTM_policy(nn.Module):
             
             action = torch.bernoulli(pi)                    #从n*n长度的概率里sample出n*n长度的0,1决策串
             
-            dynamic_mask = self.compute_dynamic_mask(action)
+            dynamic_mask = self.compute_dynamic_mask(action)#计算mask
             
             #print(type(pi))
             
             #print('pi',pi)
-            for mi in range(len(dynamic_mask)):
-                if dynamic_mask[mi]== 1-tar:
-                    action[0][mi] = 1-tar
+            for mi in range(len(dynamic_mask)):             #遍历mask
+                if dynamic_mask[mi]== 1-tar:                #如果mask里是1
+                    action[0][mi] = 1-tar                   #action也设1
             
             new_pi = pi.clone()
             

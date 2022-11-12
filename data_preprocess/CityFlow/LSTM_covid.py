@@ -133,14 +133,14 @@ class LSTM_policy(nn.Module):
             #print(i,action[0][0])
             
             
-            tmp_a=np.zeros(len(dynamic_mask))
+            tmp_a = np.zeros(len(dynamic_mask))
                 
             cumu_adding_pi = 0
             cumu_no_modify_num = len(dynamic_mask)
             
             for mi2 in range(len(dynamic_mask)):
-                if dynamic_mask[mi2]==1 - tar:
-                     tmp_a[mi2]=(1-tar-pi[0][mi2])*0.8
+                if dynamic_mask[mi2] == 1 - tar:                #如果mask里强制设1了
+                     tmp_a[mi2] = (1 - tar-pi[0][mi2]) * 0.8    #
                      #cumu_adding_pi = cumu_adding_pi + tmp_a[mi2]
                      #cumu_no_modify_num = cumu_no_modify_num - 1
                     
